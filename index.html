@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>校园代取快递</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding-bottom: 60px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #4da6ff, #3399ff);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+        
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+            flex: 1;
+            padding: 5px 0;
+        }
+        
+        .tab-item.active {
+            color: #4da6ff;
+        }
+        
+        .tab-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn {
+            padding: 14px 20px;
+            border-radius: 10px;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            text-align: center;
+            display: block;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s;
+            touch-action: manipulation;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4da6ff, #3399ff);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #f0f8ff;
+            color: #4da6ff;
+            border: 1px solid #4da6ff;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .required::after {
+            content: " *";
+            color: #ff4757;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            background-color: #f9f9f9;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #4da6ff;
+            background-color: white;
+        }
+        
+        .order-list {
+            margin-top: 15px;
+        }
+        
+        .order-item {
+            background-color: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #4da6ff;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .order-id {
+            font-weight: bold;
+            color: #4da6ff;
+        }
+        
+        .order-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-taken {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .status-processing {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        
+        .status-completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .order-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .order-detail {
+            margin-bottom: 5px;
+        }
+        
+        .order-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            touch-action: manipulation;
+        }
+        
+        .btn-take {
+            background-color: #4da6ff;
+            color: white;
+        }
+        
+        .btn-chat {
+            background-color: #07c160;
+            color: white;
+        }
+        
+        .chat-container {
+            height: calc(100vh - 60px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            background-color: #4da6ff;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        
+        .messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #f0f8ff;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .message {
+            max-width: 80%;
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            word-break: break-word;
+        }
+        
+        .message.received {
+            background-color: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message.sent {
+            background-color: #4da6ff;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message-time {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+            text-align: right;
+        }
+        
+        .chat-input {
+            display: flex;
+            padding: 12px;
+            background-color: white;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            margin-right: 10px;
+            padding: 12px;
+        }
+        
+        .send-btn {
+            background-color: #4da6ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 20px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #e0e0e0;
+        }
+        
+        .form-note {
+            background-color: #f0f8ff;
+            border-left: 4px solid #4da6ff;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+        }
+        
+        .form-note i {
+            color: #4da6ff;
+            margin-right: 8px;
+        }
+        
+        .contact-method {
+            display: flex;
+            margin-bottom: 10px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .contact-method input[type="radio"] {
+            width: auto;
+            margin-right: 8px;
+        }
+        
+        .contact-method label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0;
+        }
+        
+        .chat-indicator {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .mobile-only {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .order-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .mobile-only {
+                display: block;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            .card {
+                padding: 12px;
+            }
+            
+            .btn {
+                padding: 16px 20px;
+            }
+            
+            input, select, textarea {
+                padding: 16px;
+            }
+        }
+        
+        /* 移动端优化 */
+        select {
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+        
+        .swipe-hint {
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        @media (max-width: 480px) {
+            .swipe-hint {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <div class="navbar">
+        <h1>校园代取快递</h1>
+    </div>
+    
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 首页/订单列表 -->
+        <div id="home-page" class="page active">
+            <div class="card">
+                <h2>发布代取订单</h2>
+                <p>需要代取快递？发布订单让同学帮忙吧！</p>
+                <button class="btn btn-primary" onclick="showPage('order-page')">发布订单</button>
+            </div>
+            
+            <div class="card">
+                <h2>领取代取任务</h2>
+                <p>有空闲时间？帮同学取快递赚点零花钱！</p>
+                <button class="btn btn-secondary" onclick="showPage('take-order-page')">领取任务</button>
+            </div>
+            
+            <p class="swipe-hint">左右滑动订单查看详情</p>
+            
+            <h3 style="margin: 20px 0 10px;">我的订单</h3>
+            <div class="order-list" id="my-orders-list">
+                <!-- 我的订单将通过JavaScript动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 发布订单页面 -->
+        <div id="order-page" class="page">
+            <div class="form-note">
+                <i class="fas fa-info-circle"></i>
+                <span>带 <span style="color: #ff4757;">*</span> 的为必填项目</span>
+            </div>
+            
+            <div class="card">
+                <h2>发布代取订单</h2>
+                
+                <div class="form-group">
+                    <label for="delivery-time" class="required">期望送达时间</label>
+                    <input type="datetime-local" id="delivery-time" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pickup-address" class="required">快递地址</label>
+                    <input type="text" id="pickup-address" placeholder="例如：东门快递点、菜鸟驿站" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="delivery-address" class="required">送达地址</label>
+                    <input type="text" id="delivery-address" placeholder="例如：3号楼205室" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pickup-code" class="required">取件码</label>
+                    <input type="text" id="pickup-code" placeholder="请输入快递取件码" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="package-weight">货物重量</label>
+                    <select id="package-weight">
+                        <option value="" selected>请选择货物重量（可选）</option>
+                        <option value="1-3kg">1-3kg (小件)</option>
+                        <option value="4-6kg">4-6kg (中件)</option>
+                        <option value="8-10kg">8-10kg (大件)</option>
+                        <option value="10kg+">10kg以上 (超大件)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="package-type">物品类型</label>
+                    <select id="package-type">
+                        <option value="" disabled selected>请选择物品类型</option>
+                        <option value="daily">日用品</option>
+                        <option value="electronics">电器</option>
+                        <option value="cosmetics">化妆品</option>
+                        <option value="bedding">床上用品</option>
+                        <option value="fragile">易碎物品</option>
+                        <option value="other">其他</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact-name" class="required">联系人</label>
+                    <input type="text" id="contact-name" placeholder="请输入您的姓名" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="required">联系方式</label>
+                    <div class="contact-method">
+                        <label>
+                            <input type="radio" name="contact-method" value="wechat" checked>
+                            微信号
+                        </label>
+                        <label>
+                            <input type="radio" name="contact-method" value="phone">
+                            手机号
+                        </label>
+                        <label>
+                            <input type="radio" name="contact-method" value="qq">
+                            QQ号
+                        </label>
+                    </div>
+                    <input type="text" id="contact-info" placeholder="请输入您的联系方式" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reward">酬劳（元）</label>
+                    <input type="number" id="reward" placeholder="请输入酬劳金额" min="0" step="0.5" value="5">
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">备注</label>
+                    <textarea id="notes" placeholder="可填写特殊要求或说明" rows="3"></textarea>
+                </div>
+                
+                <button class="btn btn-primary" id="submit-order">发布订单</button>
+                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="showPage('home-page')">返回首页</button>
+            </div>
+        </div>
+        
+        <!-- 领取代取任务页面 -->
+        <div id="take-order-page" class="page">
+            <div class="card">
+                <h2>领取代取任务</h2>
+                <p>请先授权您的联系方式，以便与下单人联系</p>
+                
+                <div class="form-group">
+                    <label for="taker-name">您的姓名</label>
+                    <input type="text" id="taker-name" placeholder="请输入您的姓名" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>联系方式</label>
+                    <div class="contact-method">
+                        <label>
+                            <input type="radio" name="taker-contact-method" value="wechat" checked>
+                            微信号
+                        </label>
+                        <label>
+                            <input type="radio" name="taker-contact-method" value="phone">
+                            手机号
+                        </label>
+                        <label>
+                            <input type="radio" name="taker-contact-method" value="qq">
+                            QQ号
+                        </label>
+                    </div>
+                    <input type="text" id="taker-contact-info" placeholder="请输入您的联系方式" required>
+                </div>
+                
+                <button class="btn btn-primary" id="auth-contact">授权并查看任务</button>
+                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="showPage('home-page')">返回首页</button>
+            </div>
+            
+            <div id="available-orders" style="display: none;">
+                <h3 style="margin: 20px 0 10px;">可接取的订单</h3>
+                <div class="order-list" id="available-orders-list">
+                    <!-- 可接取订单将通过JavaScript动态生成 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 聊天页面 -->
+        <div id="chat-page" class="page">
+            <div class="chat-header">
+                <button class="back-btn" onclick="showPage('home-page')">
+                    <i class="fas fa-arrow-left"></i> 返回
+                </button>
+                <h3 id="chat-with-user">与用户聊天</h3>
+                <div style="width: 40px;"></div> <!-- 占位元素，保持标题居中 -->
+            </div>
+            
+            <div class="messages" id="chat-messages">
+                <!-- 聊天消息将通过JavaScript动态生成 -->
+            </div>
+            
+            <div class="chat-input">
+                <input type="text" id="message-input" placeholder="输入消息...">
+                <button class="send-btn" id="send-message">发送</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部导航栏 -->
+    <div class="tab-bar">
+        <div class="tab-item active" onclick="showPage('home-page')">
+            <div class="tab-icon"><i class="fas fa-home"></i></div>
+            <div>首页</div>
+        </div>
+        <div class="tab-item" onclick="showPage('take-order-page')">
+            <div class="tab-icon"><i class="fas fa-box-open"></i></div>
+            <div>领单</div>
+        </div>
+        <div class="tab-item" id="chat-tab" onclick="showPage('chat-page')">
+            <div class="tab-icon"><i class="fas fa-comments"></i></div>
+            <div>聊天</div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化数据
+        function initializeData() {
+            if (!localStorage.getItem('deliveryOrders')) {
+                // 创建一些示例订单
+                const sampleOrders = [
+                    {
+                        id: 'ORD001',
+                        deliveryTime: new Date(Date.now() + 2*60*60*1000).toISOString(),
+                        pickupAddress: '东门快递点',
+                        deliveryAddress: '3号楼-205',
+                        pickupCode: 'A12-345',
+                        packageWeight: '1-3kg (小件)',
+                        packageType: '日用品',
+                        contactName: '张三',
+                        contactMethod: 'wechat',
+                        contactInfo: 'zhangsan123',
+                        reward: 5,
+                        notes: '请尽快送达，谢谢！',
+                        status: 'pending',
+                        createdAt: new Date().toISOString(),
+                        createdBy: 'user1'
+                    },
+                    {
+                        id: 'ORD002',
+                        deliveryTime: new Date(Date.now() + 3*60*60*1000).toISOString(),
+                        pickupAddress: '西门快递点',
+                        deliveryAddress: '5号楼-312',
+                        pickupCode: 'B67-890',
+                        packageWeight: '4-6kg (中件)',
+                        packageType: '电器',
+                        contactName: '李四',
+                        contactMethod: 'phone',
+                        contactInfo: '13800138000',
+                        reward: 8,
+                        notes: '请小心搬运，内有易碎品',
+                        status: 'pending',
+                        createdAt: new Date().toISOString(),
+                        createdBy: 'user2'
+                    }
+                ];
+                localStorage.setItem('deliveryOrders', JSON.stringify(sampleOrders));
+            }
+            
+            if (!localStorage.getItem('chatMessages')) {
+                localStorage.setItem('chatMessages', JSON.stringify({}));
+            }
+            
+            if (!localStorage.getItem('currentUser')) {
+                localStorage.setItem('currentUser', JSON.stringify({
+                    id: 'user' + Date.now(),
+                    name: '',
+                    contactMethod: 'wechat',
+                    contactInfo: '',
+                    isTaker: false
+                }));
+            }
+            
+            // 设置默认的期望送达时间为当前时间后2小时
+            const now = new Date();
+            now.setHours(now.getHours() + 2);
+            const formattedDateTime = now.toISOString().slice(0, 16);
+            document.getElementById('delivery-time').value = formattedDateTime;
+        }
+        
+        // 页面切换函数
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+            
+            // 更新底部导航激活状态
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 根据页面ID设置对应的导航项为激活状态
+            if (pageId === 'home-page') {
+                document.querySelectorAll('.tab-item')[0].classList.add('active');
+                renderMyOrders();
+            } else if (pageId === 'take-order-page') {
+                document.querySelectorAll('.tab-item')[1].classList.add('active');
+            } else if (pageId === 'chat-page') {
+                document.querySelectorAll('.tab-item')[2].classList.add('active');
+                // 不自动渲染聊天消息，需要从订单进入
+            }
+        }
+        
+        // 生成订单ID
+        function generateOrderId() {
+            return 'ORD' + Date.now().toString().slice(-6);
+        }
+        
+        // 获取所有订单
+        function getOrders() {
+            return JSON.parse(localStorage.getItem('deliveryOrders')) || [];
+        }
+        
+        // 保存订单
+        function saveOrders(orders) {
+            localStorage.setItem('deliveryOrders', JSON.stringify(orders));
+        }
+        
+        // 获取当前用户
+        function getCurrentUser() {
+            return JSON.parse(localStorage.getItem('currentUser'));
+        }
+        
+        // 保存当前用户
+        function saveCurrentUser(user) {
+            localStorage.setItem('currentUser', JSON.stringify(user));
+        }
+        
+        // 获取聊天消息
+        function getChatMessages(orderId) {
+            const allMessages = JSON.parse(localStorage.getItem('chatMessages')) || {};
+            return allMessages[orderId] || [];
+        }
+        
+        // 保存聊天消息
+        function saveChatMessages(orderId, messages) {
+            const allMessages = JSON.parse(localStorage.getItem('chatMessages')) || {};
+            allMessages[orderId] = messages;
+            localStorage.setItem('chatMessages', JSON.stringify(allMessages));
+        }
+        
+        // 渲染我的订单
+        function renderMyOrders() {
+            const orders = getOrders();
+            const currentUser = getCurrentUser();
+            const myOrdersList = document.getElementById('my-orders-list');
+            myOrdersList.innerHTML = '';
+            
+            // 筛选当前用户的订单
+            const myOrders = orders.filter(order => order.createdBy === currentUser.id);
+            
+            if (myOrders.length === 0) {
+                myOrdersList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>您还没有发布过订单</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            myOrders.forEach(order => {
+                const orderItem = document.createElement('div');
+                orderItem.className = 'order-item';
+                
+                let statusClass = '';
+                let statusText = '';
+                
+                switch(order.status) {
+                    case 'pending':
+                        statusClass = 'status-pending';
+                        statusText = '待接单';
+                        break;
+                    case 'taken':
+                        statusClass = 'status-taken';
+                        statusText = '已接单';
+                        break;
+                    case 'processing':
+                        statusClass = 'status-processing';
+                        statusText = '配送中';
+                        break;
+                    case 'completed':
+                        statusClass = 'status-completed';
+                        statusText = '已完成';
+                        break;
+                }
+                
+                // 检查是否有新消息
+                const chatMessages = getChatMessages(order.id);
+                const unreadCount = chatMessages.filter(msg => 
+                    msg.sender !== currentUser.id && !msg.read
+                ).length;
+                
+                orderItem.innerHTML = `
+                    <div class="order-header">
+                        <div class="order-id">${order.id}</div>
+                        <div class="order-status ${statusClass}">${statusText}</div>
+                    </div>
+                    <div class="order-details">
+                        <div class="order-detail"><strong>取件地址:</strong> ${order.pickupAddress}</div>
+                        <div class="order-detail"><strong>送达地址:</strong> ${order.deliveryAddress}</div>
+                        <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                        <div class="order-detail"><strong>状态:</strong> ${statusText}</div>
+                    </div>
+                    ${order.status === 'taken' || order.status === 'processing' ? 
+                    `<div class="order-actions">
+                        <button class="action-btn btn-chat" data-id="${order.id}">
+                            联系接单人
+                            ${unreadCount > 0 ? `<span class="chat-indicator">${unreadCount}</span>` : ''}
+                        </button>
+                    </div>` : ''}
+                `;
+                
+                myOrdersList.appendChild(orderItem);
+            });
+            
+            // 添加聊天按钮事件
+            document.querySelectorAll('.btn-chat').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const orderId = this.dataset.id;
+                    openChat(orderId);
+                });
+            });
+            
+            // 添加触摸滑动效果
+            addSwipeSupport();
+        }
+        
+        // 添加触摸滑动支持
+        function addSwipeSupport() {
+            let startX = 0;
+            let currentX = 0;
+            
+            document.querySelectorAll('.order-item').forEach(item => {
+                item.addEventListener('touchstart', function(e) {
+                    startX = e.touches[0].clientX;
+                    this.style.transition = 'none';
+                });
+                
+                item.addEventListener('touchmove', function(e) {
+                    currentX = e.touches[0].clientX;
+                    const diff = currentX - startX;
+                    
+                    // 限制滑动范围
+                    if (diff > 0 && diff < 100) {
+                        this.style.transform = `translateX(${diff}px)`;
+                    }
+                });
+                
+                item.addEventListener('touchend', function(e) {
+                    this.style.transition = 'transform 0.3s ease';
+                    this.style.transform = 'translateX(0)';
+                    
+                    const diff = currentX - startX;
+                    if (diff > 50) {
+                        // 向右滑动，显示更多信息
+                        this.classList.toggle('expanded');
+                    }
+                });
+            });
+        }
+        
+        // 打开聊天
+        function openChat(orderId) {
+            const orders = getOrders();
+            const order = orders.find(o => o.id === orderId);
+            const currentUser = getCurrentUser();
+            
+            if (!order) return;
+            
+            // 设置聊天对象
+            let chatWith = '';
+            if (currentUser.id === order.createdBy) {
+                // 当前用户是发布者，聊天对象是接单人
+                chatWith = order.takerName || '接单人';
+            } else {
+                // 当前用户是接单人，聊天对象是发布者
+                chatWith = order.contactName;
+            }
+            
+            document.getElementById('chat-with-user').textContent = `与${chatWith}聊天`;
+            
+            // 保存当前聊天订单ID
+            window.currentChatOrderId = orderId;
+            
+            // 渲染聊天消息
+            renderChatMessages(orderId);
+            
+            // 显示聊天页面
+            showPage('chat-page');
+        }
+        
+        // 渲染可接取订单
+        function renderAvailableOrders() {
+            const orders = getOrders();
+            const availableOrdersList = document.getElementById('available-orders-list');
+            availableOrdersList.innerHTML = '';
+            
+            // 筛选待接单的订单
+            const availableOrders = orders.filter(order => order.status === 'pending');
+            
+            if (availableOrders.length === 0) {
+                availableOrdersList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-box-open"></i>
+                        <p>暂无待接单的订单</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            availableOrders.forEach(order => {
+                const orderItem = document.createElement('div');
+                orderItem.className = 'order-item';
+                
+                orderItem.innerHTML = `
+                    <div class="order-header">
+                        <div class="order-id">${order.id}</div>
+                        <div class="order-status status-pending">待接单</div>
+                    </div>
+                    <div class="order-details">
+                        <div class="order-detail"><strong>取件地址:</strong> ${order.pickupAddress}</div>
+                        <div class="order-detail"><strong>送达地址:</strong> ${order.deliveryAddress}</div>
+                        <div class="order-detail"><strong>货物重量:</strong> ${order.packageWeight || '未指定'}</div>
+                        <div class="order-detail"><strong>物品类型:</strong> ${order.packageType || '未选择'}</div>
+                        <div class="order-detail"><strong>期望时间:</strong> ${new Date(order.deliveryTime).toLocaleString()}</div>
+                        <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                    </div>
+                    <div class="order-actions">
+                        <button class="action-btn btn-take" data-id="${order.id}">接单</button>
+                    </div>
+                `;
+                
+                availableOrdersList.appendChild(orderItem);
+            });
+            
+            // 添加接单按钮事件
+            document.querySelectorAll('.btn-take').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const orderId = this.dataset.id;
+                    takeOrder(orderId);
+                });
+            });
+        }
+        
+        // 接单函数
+        function takeOrder(orderId) {
+            const orders = getOrders();
+            const currentUser = getCurrentUser();
+            const orderIndex = orders.findIndex(order => order.id === orderId);
+            
+            if (orderIndex !== -1) {
+                orders[orderIndex].status = 'taken';
+                orders[orderIndex].takenBy = currentUser.id;
+                orders[orderIndex].takerName = currentUser.name;
+                orders[orderIndex].takerContact = currentUser.contactInfo;
+                saveOrders(orders);
+                
+                // 为这个订单初始化聊天记录
+                const chatMessages = getChatMessages(orderId);
+                if (chatMessages.length === 0) {
+                    const initialMessage = {
+                        id: Date.now(),
+                        text: `你好，我已经接单了，请问什么时候方便取件？`,
+                        sender: currentUser.id,
+                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                        read: false
+                    };
+                    chatMessages.push(initialMessage);
+                    saveChatMessages(orderId, chatMessages);
+                }
+                
+                alert('接单成功！请尽快联系下单人确认细节。');
+                renderAvailableOrders();
+                renderMyOrders();
+            }
+        }
+        
+        // 渲染聊天消息
+        function renderChatMessages(orderId) {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = '';
+            
+            const messages = getChatMessages(orderId);
+            const currentUser = getCurrentUser();
+            
+            if (messages.length === 0) {
+                chatMessages.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-comments"></i>
+                        <p>还没有消息，开始聊天吧</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                const isSent = msg.sender === currentUser.id;
+                messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+                
+                if (msg.image) {
+                    messageDiv.innerHTML = `
+                        <img src="${msg.image}" style="max-width: 100%; border-radius: 8px; margin-bottom: 5px;">
+                        <div>${msg.text}</div>
+                        <div class="message-time">${msg.time}</div>
+                    `;
+                } else {
+                    messageDiv.innerHTML = `
+                        <div>${msg.text}</div>
+                        <div class="message-time">${msg.time}</div>
+                    `;
+                }
+                
+                chatMessages.appendChild(messageDiv);
+            });
+            
+            // 滚动到底部
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // 标记消息为已读
+            markMessagesAsRead(orderId, currentUser.id);
+        }
+        
+        // 标记消息为已读
+        function markMessagesAsRead(orderId, userId) {
+            const messages = getChatMessages(orderId);
+            let updated = false;
+            
+            messages.forEach(msg => {
+                if (msg.sender !== userId && !msg.read) {
+                    msg.read = true;
+                    updated = true;
+                }
+            });
+            
+            if (updated) {
+                saveChatMessages(orderId, messages);
+                renderMyOrders();
+            }
+        }
+        
+        // 发送消息
+        function sendMessage() {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+            const orderId = window.currentChatOrderId;
+            
+            if (message && orderId) {
+                const currentUser = getCurrentUser();
+                const newMessage = {
+                    id: Date.now(),
+                    text: message,
+                    sender: currentUser.id,
+                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                    read: false
+                };
+                
+                // 保存消息
+                const messages = getChatMessages(orderId);
+                messages.push(newMessage);
+                saveChatMessages(orderId, messages);
+                
+                // 更新聊天界面
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message sent';
+                messageDiv.innerHTML = `
+                    <div>${newMessage.text}</div>
+                    <div class="message-time">${newMessage.time}</div>
+                `;
+                
+                document.getElementById('chat-messages').appendChild(messageDiv);
+                messageInput.value = '';
+                
+                // 滚动到底部
+                document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+                
+                // 更新订单列表中的未读消息提示
+                renderMyOrders();
+            }
+        }
+        
+        // 初始化事件监听器
+        function initEventListeners() {
+            // 发布订单
+            document.getElementById('submit-order').addEventListener('click', function() {
+                // 获取表单数据
+                const deliveryTime = document.getElementById('delivery-time').value;
+                const pickupAddress = document.getElementById('pickup-address').value;
+                const deliveryAddress = document.getElementById('delivery-address').value;
+                const pickupCode = document.getElementById('pickup-code').value;
+                const packageWeight = document.getElementById('package-weight').value;
+                const packageType = document.getElementById('package-type').value;
+                const contactName = document.getElementById('contact-name').value;
+                const contactMethod = document.querySelector('input[name="contact-method"]:checked').value;
+                const contactInfo = document.getElementById('contact-info').value;
+                const reward = document.getElementById('reward').value || 5;
+                const notes = document.getElementById('notes').value;
+                const currentUser = getCurrentUser();
+                
+                // 验证必填字段
+                if (!deliveryTime || !pickupAddress || !deliveryAddress || 
+                    !pickupCode || !contactName || !contactInfo) {
+                    alert('请填写所有必填字段！');
+                    return;
+                }
+                
+                // 创建新订单
+                const newOrder = {
+                    id: generateOrderId(),
+                    deliveryTime: deliveryTime,
+                    pickupAddress: pickupAddress,
+                    deliveryAddress: deliveryAddress,
+                    pickupCode: pickupCode,
+                    packageWeight: packageWeight ? document.getElementById('package-weight').options[document.getElementById('package-weight').selectedIndex].text : '未指定',
+                    packageType: packageType ? document.getElementById('package-type').options[document.getElementById('package-type').selectedIndex].text : '未选择',
+                    contactName: contactName,
+                    contactMethod: contactMethod,
+                    contactInfo: contactInfo,
+                    reward: reward,
+                    notes: notes,
+                    status: 'pending',
+                    createdAt: new Date().toISOString(),
+                    createdBy: currentUser.id
+                };
+                
+                // 保存订单
+                const orders = getOrders();
+                orders.unshift(newOrder);
+                saveOrders(orders);
+                
+                // 重置表单
+                document.getElementById('pickup-address').value = '';
+                document.getElementById('delivery-address').value = '';
+                document.getElementById('pickup-code').value = '';
+                document.getElementById('package-weight').selectedIndex = 0;
+                document.getElementById('package-type').selectedIndex = 0;
+                document.getElementById('contact-name').value = '';
+                document.getElementById('contact-info').value = '';
+                document.getElementById('reward').value = '5';
+                document.getElementById('notes').value = '';
+                
+                // 设置默认时间为当前时间后2小时
+                const now = new Date();
+                now.setHours(now.getHours() + 2);
+                const formattedDateTime = now.toISOString().slice(0, 16);
+                document.getElementById('delivery-time').value = formattedDateTime;
+                
+                alert('代取请求已提交！');
+                showPage('home-page');
+            });
+            
+            // 授权联系方式
+            document.getElementById('auth-contact').addEventListener('click', function() {
+                const takerName = document.getElementById('taker-name').value;
+                const takerContactInfo = document.getElementById('taker-contact-info').value;
+                const takerContactMethod = document.querySelector('input[name="taker-contact-method"]:checked').value;
+                
+                if (!takerName || !takerContactInfo) {
+                    alert('请填写您的姓名和联系方式！');
+                    return;
+                }
+                
+                // 更新当前用户信息
+                const currentUser = getCurrentUser();
+                currentUser.name = takerName;
+                currentUser.contactInfo = takerContactInfo;
+                currentUser.contactMethod = takerContactMethod;
+                currentUser.isTaker = true;
+                saveCurrentUser(currentUser);
+                
+                // 显示可接取订单
+                document.getElementById('available-orders').style.display = 'block';
+                renderAvailableOrders();
+            });
+            
+            // 发送消息
+            document.getElementById('send-message').addEventListener('click', sendMessage);
+            document.getElementById('message-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // 联系方式选择变化
+            document.querySelectorAll('input[name="contact-method"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    let placeholder = '';
+                    if (this.value === 'wechat') {
+                        placeholder = '请输入您的微信号';
+                    } else if (this.value === 'phone') {
+                        placeholder = '请输入您的手机号';
+                    } else if (this.value === 'qq') {
+                        placeholder = '请输入您的QQ号';
+                    }
+                    document.getElementById('contact-info').placeholder = placeholder;
+                });
+            });
+            
+            document.querySelectorAll('input[name="taker-contact-method"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    let placeholder = '';
+                    if (this.value === 'wechat') {
+                        placeholder = '请输入您的微信号';
+                    } else if (this.value === 'phone') {
+                        placeholder = '请输入您的手机号';
+                    } else if (this.value === 'qq') {
+                        placeholder = '请输入您的QQ号';
+                    }
+                    document.getElementById('taker-contact-info').placeholder = placeholder;
+                });
+            });
+        }
+        
+        // 初始化应用
+        function initApp() {
+            initializeData();
+            initEventListeners();
+            renderMyOrders();
+            
+            // 设置默认联系方式占位符
+            document.getElementById('contact-info').placeholder = '请输入您的微信号';
+            document.getElementById('taker-contact-info').placeholder = '请输入您的微信号';
+            
+            // 添加移动端优化
+            if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                document.body.classList.add('mobile-device');
+            }
+        }
+        
+        // 启动应用
+        initApp();
+    </script>
+</body>
+</html>
