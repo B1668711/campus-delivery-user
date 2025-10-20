@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>校园服务平台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* 基础样式 - 保持不变 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding-bottom: 60px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #4da6ff, #3399ff);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+        
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+            flex: 1;
+            padding: 5px 0;
+        }
+        
+        .tab-item.active {
+            color: #4da6ff;
+        }
+        
+        .tab-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn {
+            padding: 14px 20px;
+            border-radius: 10px;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            text-align: center;
+            display: block;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s;
+            touch-action: manipulation;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4da6ff, #3399ff);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #07c160, #05a050);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #f0f8ff;
+            color: #4da6ff;
+            border: 1px solid #4da6ff;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background-color: white;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4da6ff, #3399ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        .user-info {
+            flex: 1;
+        }
+        
+        .user-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .user-id {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .user-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4da6ff;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .service-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+            cursor: pointer;
+            border-top: 4px solid #4da6ff;
+        }
+        
+        .service-card.errand {
+            border-top-color: #07c160;
+        }
+        
+        .service-card:active {
+            transform: scale(0.98);
+        }
+        
+        .service-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            color: #4da6ff;
+        }
+        
+        .service-card.errand .service-icon {
+            color: #07c160;
+        }
+        
+        .service-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .service-desc {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .admin-link {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f8ff;
+            border-radius: 10px;
+        }
+        
+        .admin-link a {
+            color: #4da6ff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #e0e0e0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .error-message {
+            background-color: #ffe6e6;
+            border: 1px solid #ffcccc;
+            color: #d63031;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        /* 代取快递页面样式 */
+        .delivery-actions {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .delivery-actions .btn {
+            flex: 1;
+            margin: 0;
+        }
+        
+        /* 跑腿页面样式 */
+        .errand-actions {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .errand-actions .btn {
+            flex: 1;
+            margin: 0;
+        }
+        
+        /* 新增：表单样式优化 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-label.required::after {
+            content: " *";
+            color: #ff4757;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #fafafa;
+            transition: all 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #4da6ff;
+            background-color: white;
+            box-shadow: 0 0 0 2px rgba(77, 166, 255, 0.2);
+        }
+        
+        .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #fafafa;
+            transition: all 0.2s;
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+        
+        .form-textarea:focus {
+            outline: none;
+            border-color: #4da6ff;
+            background-color: white;
+            box-shadow: 0 0 0 2px rgba(77, 166, 255, 0.2);
+        }
+        
+        /* 订单项样式 */
+        .order-item {
+            background-color: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #4da6ff;
+        }
+        
+        .order-item.errand-item {
+            border-left-color: #07c160;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .order-id {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .order-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-taken {
+            background-color: #cce7ff;
+            color: #004085;
+        }
+        
+        .status-processing {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-cancelled {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .order-detail {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .order-detail strong {
+            color: #555;
+        }
+        
+        .order-type-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            background-color: #f0f8ff;
+            color: #4da6ff;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+        
+        .order-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.2s;
+        }
+        
+        .btn-take {
+            background-color: #4da6ff;
+            color: white;
+        }
+        
+        .btn-take:active {
+            background-color: #3399ff;
+        }
+        
+        /* 设置页面样式优化 */
+        .settings-section {
+            margin-bottom: 25px;
+        }
+        
+        .settings-section h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #4da6ff;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .settings-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background-color: #fafafa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .settings-label {
+            flex: 1;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .settings-value {
+            flex: 2;
+            color: #666;
+        }
+        
+        .settings-edit-btn {
+            background-color: #4da6ff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.2s;
+        }
+        
+        .logout-btn:active {
+            background-color: #ff3742;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .card {
+                padding: 12px;
+            }
+            
+            .btn {
+                padding: 16px 20px;
+            }
+            
+            .service-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-input, .form-textarea {
+                padding: 14px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <div class="navbar">
+        <h1 id="navbar-title">校园服务平台</h1>
+    </div>
+    
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 主页面/服务选择 -->
+        <div id="main-page" class="page active">
+            <div class="user-profile">
+                <div class="user-avatar" id="user-avatar">U</div>
+                <div class="user-info">
+                    <div class="user-name" id="user-display-name">未设置用户名</div>
+                    <div class="user-id" id="user-display-id">ID: 加载中...</div>
+                </div>
+            </div>
+            
+            <div class="user-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="my-orders-count">0</div>
+                    <div class="stat-label">我的订单</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="completed-orders-count">0</div>
+                    <div class="stat-label">已完成</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>选择服务类型</h2>
+                <p>请选择您需要的服务</p>
+                
+                <div class="service-grid">
+                    <div class="service-card" onclick="enterDeliveryService()">
+                        <div class="service-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="service-title">代取快递</div>
+                        <div class="service-desc">帮忙取送快递包裹</div>
+                    </div>
+                    
+                    <div class="service-card errand" onclick="enterErrandService()">
+                        <div class="service-icon">
+                            <i class="fas fa-running"></i>
+                        </div>
+                        <div class="service-title">校园跑腿</div>
+                        <div class="service-desc">帮忙购买、送件等</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="admin-link">
+                <p>管理员请点击：<a href="https://B1668711.github.io/campus-delivery-admin" target="_blank">进入管理平台</a></p>
+            </div>
+        </div>
+        
+        <!-- 代取快递首页 -->
+        <div id="delivery-home-page" class="page">
+            <div class="card">
+                <button class="btn btn-secondary" onclick="showPage('main-page')" style="margin-bottom: 15px;">
+                    <i class="fas fa-arrow-left"></i> 返回主页面
+                </button>
+                <h2>代取快递服务</h2>
+                <p>需要代取快递？发布订单让同学帮忙吧！</p>
+                
+                <div class="delivery-actions">
+                    <button class="btn btn-primary" onclick="showPage('order-page')">发布代取订单</button>
+                    <button class="btn btn-secondary" onclick="showPage('take-order-page')">领取代取任务</button>
+                </div>
+            </div>
+            
+            <h3 style="margin: 20px 0 10px;">我的代取订单</h3>
+            <div class="order-list" id="delivery-orders-list">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> 加载中...
+                </div>
+            </div>
+        </div>
+        
+        <!-- 跑腿服务首页 -->
+        <div id="errand-home-page" class="page">
+            <div class="card">
+                <button class="btn btn-secondary" onclick="showPage('main-page')" style="margin-bottom: 15px;">
+                    <i class="fas fa-arrow-left"></i> 返回主页面
+                </button>
+                <h2>校园跑腿服务</h2>
+                <p>需要帮忙买东西、送文件？发布跑腿任务吧！</p>
+                
+                <div class="errand-actions">
+                    <button class="btn btn-success" onclick="showPage('errand-order-page')">发布跑腿任务</button>
+                    <button class="btn btn-secondary" onclick="showPage('take-errand-page')">领取跑腿任务</button>
+                </div>
+            </div>
+            
+            <h3 style="margin: 20px 0 10px;">我的跑腿任务</h3>
+            <div class="order-list" id="errand-orders-list">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> 加载中...
+                </div>
+            </div>
+        </div>
+        
+        <!-- 发布代取快递订单页面 -->
+        <div id="order-page" class="page">
+            <div class="card">
+                <button class="btn btn-secondary" onclick="showPage('delivery-home-page')" style="margin-bottom: 15px;">
+                    <i class="fas fa-arrow-left"></i> 返回代取服务
+                </button>
+                
+                <h2>发布代取订单</h2>
+                
+                <div class="form-group">
+                    <label for="delivery-time" class="form-label required">期望送达时间</label>
+                    <input type="datetime-local" id="delivery-time" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pickup-address" class="form-label required">快递地址</label>
+                    <input type="text" id="pickup-address" class="form-input" placeholder="例如：东门快递点、菜鸟驿站" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="delivery-address" class="form-label required">送达地址</label>
+                    <input type="text" id="delivery-address" class="form-input" placeholder="例如：3号楼205室" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pickup-code" class="form-label required">取件码</label>
+                    <input type="text" id="pickup-code" class="form-input" placeholder="请输入快递取件码" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact-name" class="form-label required">联系人</label>
+                    <input type="text" id="contact-name" class="form-input" placeholder="请输入您的姓名" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact-info" class="form-label required">联系方式</label>
+                    <input type="text" id="contact-info" class="form-input" placeholder="请输入您的联系方式" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reward" class="form-label">酬劳（元）</label>
+                    <input type="number" id="reward" class="form-input" placeholder="请输入酬劳金额" min="0" step="0.5" value="5">
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes" class="form-label">备注</label>
+                    <textarea id="notes" class="form-textarea" placeholder="可填写特殊要求或说明" rows="3"></textarea>
+                </div>
+                
+                <button class="btn btn-primary" id="submit-order">发布订单</button>
+                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="showPage('delivery-home-page')">返回代取服务</button>
+            </div>
+        </div>
+        
+        <!-- 领取代取任务页面 -->
+        <div id="take-order-page" class="page">
+            <div class="card">
+                <button class="btn btn-secondary" onclick="showPage('delivery-home-page')" style="margin-bottom: 15px;">
+                    <i class="fas fa-arrow-left"></i> 返回代取服务
+                </button>
+                
+                <h2>领取代取任务</h2>
+                <p>请先授权您的联系方式，以便与下单人联系</p>
+                
+                <div class="form-group">
+                    <label for="taker-name" class="form-label">您的姓名</label>
+                    <input type="text" id="taker-name" class="form-input" placeholder="请输入您的姓名" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="taker-contact-info" class="form-label">联系方式</label>
+                    <input type="text" id="taker-contact-info" class="form-input" placeholder="请输入您的联系方式" required>
+                </div>
+                
+                <button class="btn btn-primary" id="auth-contact">授权并查看任务</button>
+                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="showPage('delivery-home-page')">返回代取服务</button>
+            </div>
+            
+            <div id="available-orders" style="display: none;">
+                <h3 style="margin: 20px 0 10px;">可接取的订单</h3>
+                <div class="order-list" id="available-orders-list">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> 加载中...
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 发布跑腿任务页面 -->
+        <div id="errand-order-page" class="page">
+            <div class="card">
+                <button class="btn btn-secondary" onclick="showPage('errand-home-page')" style="margin-bottom: 15px;">
+                    <i class="fas fa-arrow-left"></i> 返回跑腿服务
+                </button>
+                
+                <h2>发布跑腿任务</h2>
+                
+                <div class="form-group">
+                    <label for="errand-title" class="form-label required">任务标题</label>
+                    <input type="text" id="errand-title" class="form-input" placeholder="例如：帮忙买奶茶、送文件到行政楼" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="errand-description" class="form-label required">任务描述</label>
+                    <textarea id="errand-description" class="form-textarea" placeholder="请详细描述您的需求" rows="3" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="errand-pickup" class="form-label required">取物地点</label>
+                    <input type="text" id="errand-pickup" class="form-input" placeholder="例如：学校东门奶茶店、图书馆打印店" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="errand-delivery" class="form-label required">送达地点</label>
+                    <input type="text" id="errand-delivery" class="form-input" placeholder="例如：3号楼205室、行政楼301" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="errand-deadline" class="form-label required">期望完成时间</label>
+                    <input type="datetime-local" id="errand-deadline" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="errand-reward" class="form-label required">跑腿酬劳（元）</label>
+                    <input type="number" id="errand-reward" class="form-input" placeholder="请输入跑腿酬劳" min="0" step="0.5" value="3" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="errand-contact-name" class="form-label required">联系人</label>
+                    <input type="text" id="errand-contact-name" class="form-input" placeholder="请输入您的姓名" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="errand-contact-info" class="form-label required">联系方式</label>
+                    <input type="text" id="errand-contact-info" class="form-input" placeholder="请输入您的联系方式" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="errand-notes" class="form-label">备注</label>
+                    <textarea id="errand-notes" class="form-textarea" placeholder="可填写特殊要求或说明" rows="2"></textarea>
+                </div>
+                
+                <button class="btn btn-success" id="submit-errand-order">发布跑腿任务</button>
+                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="showPage('errand-home-page')">返回跑腿服务</button>
+            </div>
+        </div>
+        
+        <!-- 领取跑腿任务页面 -->
+        <div id="take-errand-page" class="page">
+            <div class="card">
+                <button class="btn btn-secondary" onclick="showPage('errand-home-page')" style="margin-bottom: 15px;">
+                    <i class="fas fa-arrow-left"></i> 返回跑腿服务
+                </button>
+                
+                <h2>领取跑腿任务</h2>
+                <p>请先授权您的联系方式，以便与发布人联系</p>
+                
+                <div class="form-group">
+                    <label for="errand-taker-name" class="form-label">您的姓名</label>
+                    <input type="text" id="errand-taker-name" class="form-input" placeholder="请输入您的姓名" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="errand-taker-contact-info" class="form-label">联系方式</label>
+                    <input type="text" id="errand-taker-contact-info" class="form-input" placeholder="请输入您的联系方式" required>
+                </div>
+                
+                <button class="btn btn-success" id="auth-errand-contact">授权并查看任务</button>
+                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="showPage('errand-home-page')">返回跑腿服务</button>
+            </div>
+            
+            <div id="available-errands" style="display: none;">
+                <h3 style="margin: 20px 0 10px;">可接取的跑腿任务</h3>
+                <div class="order-list" id="available-errands-list">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> 加载中...
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 设置页面 -->
+        <div id="settings-page" class="page">
+            <div class="card">
+                <h2>账户设置</h2>
+                
+                <div class="user-profile">
+                    <div class="user-avatar" id="settings-user-avatar">U</div>
+                    <div class="user-info">
+                        <div class="user-name" id="settings-user-name">未设置用户名</div>
+                        <div class="user-id" id="settings-user-id">ID: 加载中...</div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>基本信息</h3>
+                    <div class="settings-item">
+                        <div class="settings-label">用户名</div>
+                        <div class="settings-value" id="display-user-name">未设置</div>
+                        <button class="settings-edit-btn" onclick="editUserName()">修改</button>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-label">用户ID</div>
+                        <div class="settings-value" id="display-user-id">加载中...</div>
+                        <div style="width: 40px;"></div>
+                    </div>
+                </div>
+                
+                <button class="logout-btn" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部导航栏 -->
+    <div class="tab-bar">
+        <div class="tab-item active" onclick="showPage('main-page')">
+            <div class="tab-icon"><i class="fas fa-home"></i></div>
+            <div>首页</div>
+        </div>
+        <div class="tab-item" onclick="enterDeliveryService()">
+            <div class="tab-icon"><i class="fas fa-box"></i></div>
+            <div>快递</div>
+        </div>
+        <div class="tab-item" onclick="enterErrandService()">
+            <div class="tab-icon"><i class="fas fa-running"></i></div>
+            <div>跑腿</div>
+        </div>
+        <div class="tab-item" onclick="showPage('settings-page')">
+            <div class="tab-icon"><i class="fas fa-cog"></i></div>
+            <div>设置</div>
+        </div>
+    </div>
+
+    <script>
+        // 原有的JavaScript代码保持不变
+        // Supabase 配置
+        const SUPABASE_URL = 'https://mdkvoofsjmwxwsfoudbz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ka3Zvb2Zzam13eHdzZm91ZGJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4ODE2NTgsImV4cCI6MjA3NjQ1NzY1OH0.KXwS4CWYM5RIJ9RzQAVwAn9f1qvDBHykbil0CVykFP8';
+        
+        // 初始化 Supabase 客户端
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // 用户状态管理
+        let currentUser = null;
+        
+        // 生成设备唯一标识
+        function generateDeviceId() {
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('deviceId', deviceId);
+            }
+            return deviceId;
+        }
+        
+        // 初始化用户
+        function initUser() {
+            const deviceId = generateDeviceId();
+            let user = localStorage.getItem('currentUser');
+            
+            if (user) {
+                currentUser = JSON.parse(user);
+                if (currentUser.deviceId !== deviceId) {
+                    createNewUser(deviceId);
+                }
+            } else {
+                createNewUser(deviceId);
+            }
+            
+            updateUserDisplay();
+            return currentUser;
+        }
+        
+        // 创建新用户
+        function createNewUser(deviceId) {
+            const userId = 'user_' + Date.now();
+            currentUser = {
+                id: userId,
+                deviceId: deviceId,
+                name: '用户' + userId.slice(-6),
+                contactMethod: 'wechat',
+                contactInfo: '',
+                isTaker: false,
+                autoFillContact: true,
+                createdAt: new Date().toISOString()
+            };
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        }
+        
+        // 保存用户信息
+        function saveUser(user) {
+            currentUser = { ...currentUser, ...user };
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            updateUserDisplay();
+        }
+        
+        // 更新用户显示
+        function updateUserDisplay() {
+            if (!currentUser) return;
+            
+            document.getElementById('user-display-name').textContent = currentUser.name;
+            document.getElementById('user-display-id').textContent = 'ID: ' + currentUser.id.slice(-8);
+            document.getElementById('user-avatar').textContent = currentUser.name.charAt(0);
+            
+            // 更新设置页面用户信息
+            document.getElementById('settings-user-name').textContent = currentUser.name;
+            document.getElementById('settings-user-id').textContent = 'ID: ' + currentUser.id.slice(-8);
+            document.getElementById('settings-user-avatar').textContent = currentUser.name.charAt(0);
+            
+            // 更新设置页面详细信息
+            document.getElementById('display-user-name').textContent = currentUser.name;
+            document.getElementById('display-user-id').textContent = currentUser.id;
+        }
+        
+        // 进入代取快递服务
+        function enterDeliveryService() {
+            document.getElementById('navbar-title').textContent = '代取快递服务';
+            showPage('delivery-home-page');
+            renderDeliveryOrders();
+        }
+        
+        // 进入跑腿服务
+        function enterErrandService() {
+            document.getElementById('navbar-title').textContent = '校园跑腿服务';
+            showPage('errand-home-page');
+            renderErrandOrders();
+        }
+        
+        // 获取所有订单（代取快递）
+        async function getDeliveryOrders() {
+            try {
+                const { data, error } = await supabase
+                    .from('delivery_orders')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                return data || [];
+            } catch (error) {
+                console.error('获取代取订单失败:', error);
+                throw error;
+            }
+        }
+        
+        // 获取所有跑腿任务
+        async function getErrandOrders() {
+            try {
+                const { data, error } = await supabase
+                    .from('errand_orders')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                return data || [];
+            } catch (error) {
+                console.error('获取跑腿任务失败:', error);
+                throw error;
+            }
+        }
+        
+        // 保存订单
+        async function saveOrder(order) {
+            try {
+                const orderData = {
+                    delivery_time: new Date(order.deliveryTime).toISOString(),
+                    pickup_address: order.pickupAddress,
+                    delivery_address: order.deliveryAddress,
+                    pickup_code: order.pickupCode,
+                    contact_name: order.contactName,
+                    contact_info: order.contactInfo,
+                    reward: parseFloat(order.reward),
+                    notes: order.notes,
+                    status: 'pending',
+                    created_by: order.createdBy
+                };
+                
+                const { data, error } = await supabase
+                    .from('delivery_orders')
+                    .insert([orderData])
+                    .select();
+                
+                if (error) throw error;
+                return data[0];
+            } catch (error) {
+                console.error('保存订单失败:', error);
+                throw error;
+            }
+        }
+        
+        // 保存跑腿任务
+        async function saveErrandOrder(order) {
+            try {
+                const orderData = {
+                    title: order.title,
+                    description: order.description,
+                    pickup_location: order.pickupLocation,
+                    delivery_location: order.deliveryLocation,
+                    deadline: new Date(order.deadline).toISOString(),
+                    reward: parseFloat(order.reward),
+                    contact_name: order.contactName,
+                    contact_info: order.contactInfo,
+                    notes: order.notes,
+                    status: 'pending',
+                    created_by: order.createdBy
+                };
+                
+                const { data, error } = await supabase
+                    .from('errand_orders')
+                    .insert([orderData])
+                    .select();
+                
+                if (error) throw error;
+                return data[0];
+            } catch (error) {
+                console.error('保存跑腿任务失败:', error);
+                throw error;
+            }
+        }
+        
+        // 更新订单
+        async function updateOrder(orderId, updates) {
+            try {
+                const updateData = {
+                    ...updates,
+                    updated_at: new Date().toISOString()
+                };
+                
+                const { data, error } = await supabase
+                    .from('delivery_orders')
+                    .update(updateData)
+                    .eq('id', orderId)
+                    .select();
+                
+                if (error) throw error;
+                return data[0];
+            } catch (error) {
+                console.error('更新订单失败:', error);
+                throw error;
+            }
+        }
+        
+        // 更新跑腿任务
+        async function updateErrandOrder(orderId, updates) {
+            try {
+                const updateData = {
+                    ...updates,
+                    updated_at: new Date().toISOString()
+                };
+                
+                const { data, error } = await supabase
+                    .from('errand_orders')
+                    .update(updateData)
+                    .eq('id', orderId)
+                    .select();
+                
+                if (error) throw error;
+                return data[0];
+            } catch (error) {
+                console.error('更新跑腿任务失败:', error);
+                throw error;
+            }
+        }
+        
+        // 渲染代取快递订单
+        async function renderDeliveryOrders() {
+            const ordersList = document.getElementById('delivery-orders-list');
+            
+            try {
+                const orders = await getDeliveryOrders();
+                ordersList.innerHTML = '';
+                
+                const myOrders = orders.filter(order => 
+                    order.created_by === currentUser.id || order.taken_by === currentUser.id
+                );
+                
+                // 更新首页统计数据
+                updateMainPageStats();
+                
+                if (myOrders.length === 0) {
+                    ordersList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>您还没有发布或接取任何代取订单</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                myOrders.forEach(order => {
+                    const orderItem = document.createElement('div');
+                    orderItem.className = 'order-item';
+                    
+                    let statusClass = '';
+                    let statusText = '';
+                    
+                    switch(order.status) {
+                        case 'pending':
+                            statusClass = 'status-pending';
+                            statusText = '待接单';
+                            break;
+                        case 'taken':
+                            statusClass = 'status-taken';
+                            statusText = '已接单';
+                            break;
+                        case 'processing':
+                            statusClass = 'status-processing';
+                            statusText = '配送中';
+                            break;
+                        case 'completed':
+                            statusClass = 'status-completed';
+                            statusText = '已完成';
+                            break;
+                        case 'cancelled':
+                            statusClass = 'status-cancelled';
+                            statusText = '已取消';
+                            break;
+                    }
+                    
+                    // 判断订单类型
+                    const isMyOrder = order.created_by === currentUser.id;
+                    const orderType = isMyOrder ? '我发布的' : '我接取的';
+                    
+                    orderItem.innerHTML = `
+                        <div class="order-header">
+                            <div class="order-id">
+                                ${order.id.slice(-6).toUpperCase()}
+                                <span class="order-type-tag">${orderType}</span>
+                            </div>
+                            <div class="order-status ${statusClass}">${statusText}</div>
+                        </div>
+                        <div class="order-details">
+                            <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
+                            <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
+                            <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                            <div class="order-detail"><strong>状态:</strong> ${statusText}</div>
+                        </div>
+                    `;
+                    
+                    ordersList.appendChild(orderItem);
+                });
+                
+            } catch (error) {
+                ordersList.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>加载代取订单失败: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 渲染跑腿任务
+        async function renderErrandOrders() {
+            const ordersList = document.getElementById('errand-orders-list');
+            
+            try {
+                const orders = await getErrandOrders();
+                ordersList.innerHTML = '';
+                
+                const myOrders = orders.filter(order => 
+                    order.created_by === currentUser.id || order.taken_by === currentUser.id
+                );
+                
+                // 更新首页统计数据
+                updateMainPageStats();
+                
+                if (myOrders.length === 0) {
+                    ordersList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-tasks"></i>
+                            <p>您还没有发布或接取任何跑腿任务</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                myOrders.forEach(order => {
+                    const orderItem = document.createElement('div');
+                    orderItem.className = 'order-item errand-item';
+                    
+                    let statusClass = '';
+                    let statusText = '';
+                    
+                    switch(order.status) {
+                        case 'pending':
+                            statusClass = 'status-pending';
+                            statusText = '待接单';
+                            break;
+                        case 'taken':
+                            statusClass = 'status-taken';
+                            statusText = '已接单';
+                            break;
+                        case 'processing':
+                            statusClass = 'status-processing';
+                            statusText = '进行中';
+                            break;
+                        case 'completed':
+                            statusClass = 'status-completed';
+                            statusText = '已完成';
+                            break;
+                        case 'cancelled':
+                            statusClass = 'status-cancelled';
+                            statusText = '已取消';
+                            break;
+                    }
+                    
+                    // 判断任务类型
+                    const isMyOrder = order.created_by === currentUser.id;
+                    const orderType = isMyOrder ? '我发布的' : '我接取的';
+                    
+                    orderItem.innerHTML = `
+                        <div class="order-header">
+                            <div class="order-id errand-id">
+                                ${order.id.slice(-6).toUpperCase()}
+                                <span class="order-type-tag">${orderType}</span>
+                            </div>
+                            <div class="order-status ${statusClass}">${statusText}</div>
+                        </div>
+                        <div class="order-details">
+                            <div class="order-detail"><strong>任务:</strong> ${order.title}</div>
+                            <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
+                            <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
+                            <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                            <div class="order-detail"><strong>状态:</strong> ${statusText}</div>
+                        </div>
+                    `;
+                    
+                    ordersList.appendChild(orderItem);
+                });
+                
+            } catch (error) {
+                ordersList.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>加载跑腿任务失败: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 更新首页统计数据
+        async function updateMainPageStats() {
+            try {
+                const [deliveryOrders, errandOrders] = await Promise.all([
+                    getDeliveryOrders(),
+                    getErrandOrders()
+                ]);
+                
+                const myDeliveryOrders = deliveryOrders.filter(order => 
+                    order.created_by === currentUser.id || order.taken_by === currentUser.id
+                );
+                
+                const myErrandOrders = errandOrders.filter(order => 
+                    order.created_by === currentUser.id || order.taken_by === currentUser.id
+                );
+                
+                const totalOrders = myDeliveryOrders.length + myErrandOrders.length;
+                const completedDelivery = myDeliveryOrders.filter(order => order.status === 'completed').length;
+                const completedErrand = myErrandOrders.filter(order => order.status === 'completed').length;
+                const totalCompleted = completedDelivery + completedErrand;
+                
+                document.getElementById('my-orders-count').textContent = totalOrders;
+                document.getElementById('completed-orders-count').textContent = totalCompleted;
+            } catch (error) {
+                console.error('更新首页统计失败:', error);
+            }
+        }
+        
+        // 渲染可接取的代取订单
+        async function renderAvailableOrders() {
+            const ordersList = document.getElementById('available-orders-list');
+            
+            try {
+                const orders = await getDeliveryOrders();
+                ordersList.innerHTML = '';
+                
+                const availableOrders = orders.filter(order => order.status === 'pending');
+                
+                if (availableOrders.length === 0) {
+                    ordersList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-box-open"></i>
+                            <p>暂无待接单的订单</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                availableOrders.forEach(order => {
+                    const orderItem = document.createElement('div');
+                    orderItem.className = 'order-item';
+                    
+                    orderItem.innerHTML = `
+                        <div class="order-header">
+                            <div class="order-id">${order.id.slice(-6).toUpperCase()}</div>
+                            <div class="order-status status-pending">待接单</div>
+                        </div>
+                        <div class="order-details">
+                            <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
+                            <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
+                            <div class="order-detail"><strong>期望时间:</strong> ${new Date(order.delivery_time).toLocaleString()}</div>
+                            <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                        </div>
+                        <div class="order-actions">
+                            <button class="action-btn btn-take" data-id="${order.id}">接单</button>
+                        </div>
+                    `;
+                    
+                    ordersList.appendChild(orderItem);
+                });
+                
+                // 添加接单按钮事件
+                document.querySelectorAll('.btn-take').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const orderId = this.dataset.id;
+                        takeOrder(orderId);
+                    });
+                });
+                
+            } catch (error) {
+                ordersList.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>加载订单失败: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 渲染可接取的跑腿任务
+        async function renderAvailableErrands() {
+            const errandsList = document.getElementById('available-errands-list');
+            
+            try {
+                const orders = await getErrandOrders();
+                errandsList.innerHTML = '';
+                
+                const availableErrands = orders.filter(order => order.status === 'pending');
+                
+                if (availableErrands.length === 0) {
+                    errandsList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-tasks"></i>
+                            <p>暂无待接单的跑腿任务</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                availableErrands.forEach(order => {
+                    const orderItem = document.createElement('div');
+                    orderItem.className = 'order-item errand-item';
+                    
+                    orderItem.innerHTML = `
+                        <div class="order-header">
+                            <div class="order-id errand-id">${order.id.slice(-6).toUpperCase()}</div>
+                            <div class="order-status status-pending">待接单</div>
+                        </div>
+                        <div class="order-details">
+                            <div class="order-detail"><strong>任务:</strong> ${order.title}</div>
+                            <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
+                            <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
+                            <div class="order-detail"><strong>截止时间:</strong> ${new Date(order.deadline).toLocaleString()}</div>
+                            <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                        </div>
+                        <div class="order-actions">
+                            <button class="action-btn btn-take-errand" data-id="${order.id}">接单</button>
+                        </div>
+                    `;
+                    
+                    errandsList.appendChild(orderItem);
+                });
+                
+                // 添加接单按钮事件
+                document.querySelectorAll('.btn-take-errand').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const orderId = this.dataset.id;
+                        takeErrandOrder(orderId);
+                    });
+                });
+                
+            } catch (error) {
+                errandsList.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>加载跑腿任务失败: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 接取代取订单
+        async function takeOrder(orderId) {
+            if (!currentUser.name || !currentUser.contactInfo) {
+                alert('请先填写您的姓名和联系方式！');
+                return;
+            }
+            
+            try {
+                await updateOrder(orderId, {
+                    status: 'taken',
+                    taken_by: currentUser.id,
+                    taker_name: currentUser.name,
+                    taker_contact: currentUser.contactInfo
+                });
+                
+                alert('接单成功！请尽快联系下单人确认细节。');
+                renderAvailableOrders();
+                renderDeliveryOrders();
+            } catch (error) {
+                alert('接单失败，请重试！');
+                console.error(error);
+            }
+        }
+        
+        // 接取跑腿任务
+        async function takeErrandOrder(orderId) {
+            if (!currentUser.name || !currentUser.contactInfo) {
+                alert('请先填写您的姓名和联系方式！');
+                return;
+            }
+            
+            try {
+                await updateErrandOrder(orderId, {
+                    status: 'taken',
+                    taken_by: currentUser.id,
+                    taker_name: currentUser.name,
+                    taker_contact: currentUser.contactInfo
+                });
+                
+                alert('接单成功！请尽快联系发布人确认细节。');
+                renderAvailableErrands();
+                renderErrandOrders();
+            } catch (error) {
+                alert('接单失败，请重试！');
+                console.error(error);
+            }
+        }
+        
+        // 发布代取订单
+        async function submitOrder() {
+            const deliveryTime = document.getElementById('delivery-time').value;
+            const pickupAddress = document.getElementById('pickup-address').value;
+            const deliveryAddress = document.getElementById('delivery-address').value;
+            const pickupCode = document.getElementById('pickup-code').value;
+            const contactName = document.getElementById('contact-name').value;
+            const contactInfo = document.getElementById('contact-info').value;
+            const reward = document.getElementById('reward').value || 5;
+            const notes = document.getElementById('notes').value;
+            
+            if (!deliveryTime || !pickupAddress || !deliveryAddress || 
+                !pickupCode || !contactName || !contactInfo) {
+                alert('请填写所有必填字段！');
+                return;
+            }
+            
+            try {
+                const newOrder = {
+                    deliveryTime: deliveryTime,
+                    pickupAddress: pickupAddress,
+                    deliveryAddress: deliveryAddress,
+                    pickupCode: pickupCode,
+                    contactName: contactName,
+                    contactInfo: contactInfo,
+                    reward: reward,
+                    notes: notes,
+                    status: 'pending',
+                    createdBy: currentUser.id
+                };
+                
+                await saveOrder(newOrder);
+                
+                // 重置表单
+                document.getElementById('pickup-address').value = '';
+                document.getElementById('delivery-address').value = '';
+                document.getElementById('pickup-code').value = '';
+                document.getElementById('contact-name').value = '';
+                document.getElementById('contact-info').value = '';
+                document.getElementById('reward').value = '5';
+                document.getElementById('notes').value = '';
+                
+                alert('代取请求已提交！');
+                showPage('delivery-home-page');
+                
+                await renderDeliveryOrders();
+            } catch (error) {
+                console.error('提交订单错误详情:', error);
+                alert('提交订单失败，请检查网络连接！');
+            }
+        }
+        
+        // 发布跑腿任务
+        async function submitErrandOrder() {
+            const title = document.getElementById('errand-title').value;
+            const description = document.getElementById('errand-description').value;
+            const pickupLocation = document.getElementById('errand-pickup').value;
+            const deliveryLocation = document.getElementById('errand-delivery').value;
+            const deadline = document.getElementById('errand-deadline').value;
+            const reward = document.getElementById('errand-reward').value;
+            const contactName = document.getElementById('errand-contact-name').value;
+            const contactInfo = document.getElementById('errand-contact-info').value;
+            const notes = document.getElementById('errand-notes').value;
+            
+            if (!title || !description || !pickupLocation || !deliveryLocation || 
+                !deadline || !reward || !contactName || !contactInfo) {
+                alert('请填写所有必填字段！');
+                return;
+            }
+            
+            try {
+                const newOrder = {
+                    title: title,
+                    description: description,
+                    pickupLocation: pickupLocation,
+                    deliveryLocation: deliveryLocation,
+                    deadline: deadline,
+                    reward: reward,
+                    contactName: contactName,
+                    contactInfo: contactInfo,
+                    notes: notes,
+                    status: 'pending',
+                    createdBy: currentUser.id
+                };
+                
+                await saveErrandOrder(newOrder);
+                
+                // 重置表单
+                document.getElementById('errand-title').value = '';
+                document.getElementById('errand-description').value = '';
+                document.getElementById('errand-pickup').value = '';
+                document.getElementById('errand-delivery').value = '';
+                document.getElementById('errand-reward').value = '3';
+                document.getElementById('errand-contact-name').value = '';
+                document.getElementById('errand-contact-info').value = '';
+                document.getElementById('errand-notes').value = '';
+                
+                alert('跑腿任务已提交！');
+                showPage('errand-home-page');
+                
+                await renderErrandOrders();
+            } catch (error) {
+                console.error('提交跑腿任务错误详情:', error);
+                alert('提交任务失败，请检查网络连接！');
+            }
+        }
+        
+        // 页面切换函数
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+            
+            // 更新底部导航激活状态
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            if (pageId === 'main-page') {
+                document.getElementById('navbar-title').textContent = '校园服务平台';
+                document.querySelectorAll('.tab-item')[0].classList.add('active');
+                updateMainPageStats();
+            } else if (pageId === 'delivery-home-page') {
+                document.querySelectorAll('.tab-item')[1].classList.add('active');
+            } else if (pageId === 'errand-home-page') {
+                document.querySelectorAll('.tab-item')[2].classList.add('active');
+            } else if (pageId === 'settings-page') {
+                document.querySelectorAll('.tab-item')[3].classList.add('active');
+                updateUserDisplay();
+            }
+        }
+        
+        // 初始化事件监听器
+        function initEventListeners() {
+            // 发布代取订单
+            document.getElementById('submit-order').addEventListener('click', submitOrder);
+            
+            // 发布跑腿任务
+            document.getElementById('submit-errand-order').addEventListener('click', submitErrandOrder);
+            
+            // 授权代取联系方式
+            document.getElementById('auth-contact').addEventListener('click', function() {
+                const takerName = document.getElementById('taker-name').value;
+                const takerContactInfo = document.getElementById('taker-contact-info').value;
+                
+                if (!takerName || !takerContactInfo) {
+                    alert('请填写您的姓名和联系方式！');
+                    return;
+                }
+                
+                saveUser({
+                    name: takerName,
+                    contactInfo: takerContactInfo,
+                    isTaker: true
+                });
+                
+                document.getElementById('available-orders').style.display = 'block';
+                renderAvailableOrders();
+            });
+            
+            // 授权跑腿联系方式
+            document.getElementById('auth-errand-contact').addEventListener('click', function() {
+                const takerName = document.getElementById('errand-taker-name').value;
+                const takerContactInfo = document.getElementById('errand-taker-contact-info').value;
+                
+                if (!takerName || !takerContactInfo) {
+                    alert('请填写您的姓名和联系方式！');
+                    return;
+                }
+                
+                saveUser({
+                    name: takerName,
+                    contactInfo: takerContactInfo,
+                    isTaker: true
+                });
+                
+                document.getElementById('available-errands').style.display = 'block';
+                renderAvailableErrands();
+            });
+        }
+        
+        // 编辑用户名
+        function editUserName() {
+            const newName = prompt('请输入新的用户名：', currentUser.name);
+            if (newName && newName.trim() !== '') {
+                saveUser({ name: newName.trim() });
+            }
+        }
+        
+        // 退出登录
+        function logout() {
+            if (confirm('确定要退出登录吗？这将重置您的账户信息。')) {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('deviceId');
+                location.reload();
+            }
+        }
+        
+        // 初始化应用
+        async function initApp() {
+            // 初始化用户
+            initUser();
+            
+            // 设置默认的期望送达时间为当前时间后2小时
+            const now = new Date();
+            now.setHours(now.getHours() + 2);
+            document.getElementById('delivery-time').value = now.toISOString().slice(0, 16);
+            
+            // 设置默认的跑腿截止时间为当前时间后2小时
+            document.getElementById('errand-deadline').value = now.toISOString().slice(0, 16);
+            
+            // 初始化事件监听器
+            initEventListeners();
+            
+            // 初始加载首页统计
+            await updateMainPageStats();
+        }
+        
+        // 启动应用
+        initApp();
+    </script>
+</body>
+</html>
