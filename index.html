@@ -664,8 +664,8 @@
         /* 未读消息徽章样式 */
         .unread-badge {
             position: absolute;
-            top: -5px;
-            right: -5px;
+            top: -2px;
+            right: -2px;
             background-color: #ff4757;
             color: white;
             border-radius: 10px;
@@ -1189,6 +1189,7 @@
         let currentUser = null;
         let currentChatOrder = null;
         let chatInterval = null;
+        let unreadUpdateInterval = null;
 
         // 生成设备唯一标识
         function generateDeviceId() {
@@ -1614,9 +1615,13 @@
                     return;
                 }
                 
-                myOrders.forEach(order => {
+                for (const order of myOrders) {
+                    const unreadCount = await getUnreadMessageCount(order.id, 'delivery');
                     const orderItem = document.createElement('div');
                     orderItem.className = 'order-item';
+                    if (unreadCount > 0) {
+                        orderItem.classList.add('chat-order-unread');
+                    }
                     
                     let statusClass = '';
                     let statusText = '';
@@ -1653,6 +1658,7 @@
                             <div class="order-id">
                                 ${order.id.slice(-8)}
                                 <span class="order-type-tag">${orderType}</span>
+                                ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}
                             </div>
                             <div class="order-status ${statusClass}">${statusText}</div>
                         </div>
@@ -1676,7 +1682,7 @@
                     `;
                     
                     ordersList.appendChild(orderItem);
-                });
+                }
                 
             } catch (error) {
                 ordersList.innerHTML = `
@@ -1713,9 +1719,13 @@
                     return;
                 }
                 
-                myOrders.forEach(order => {
+                for (const order of myOrders) {
+                    const unreadCount = await getUnreadMessageCount(order.id, 'errand');
                     const orderItem = document.createElement('div');
                     orderItem.className = 'order-item errand-item';
+                    if (unreadCount > 0) {
+                        orderItem.classList.add('chat-order-unread');
+                    }
                     
                     let statusClass = '';
                     let statusText = '';
@@ -1752,6 +1762,7 @@
                             <div class="order-id errand-id">
                                 ${order.id.slice(-8)}
                                 <span class="order-type-tag">${orderType}</span>
+                                ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}
                             </div>
                             <div class="order-status ${statusClass}">${statusText}</div>
                         </div>
@@ -1777,7 +1788,7 @@
                     `;
                     
                     ordersList.appendChild(orderItem);
-                });
+                }
                 
             } catch (error) {
                 ordersList.innerHTML = `
@@ -2215,7 +2226,7 @@
                     .neq('sender_id', currentUser.id);
 
                 if (error) throw error;
-                return data.length;
+                return data ? data.length : 0;
             } catch (error) {
                 console.error('获取未读消息数量失败:', error);
                 return 0;
@@ -2278,70 +2289,88 @@
         }
 
         // 聊天功能
-        async function openChat(orderId, orderType) {
-            // 更新最后阅读时间
-            updateLastReadTime(orderId, orderType);
-            
-            // 刷新未读消息显示
-            await updateTabUnreadBadge();
-            
-            currentChatOrder = { id: orderId, type: orderType };
-            
-            // 创建聊天模态框
-            const chatModal = document.createElement('div');
-            chatModal.id = 'chat-modal';
-            chatModal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.5);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 1000;
-            `;
-            
-            chatModal.innerHTML = `
-                <div style="background: white; width: 90%; max-width: 500px; height: 70%; border-radius: 10px; display: flex; flex-direction: column;">
-                    <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0;">订单聊天</h3>
-                        <button onclick="closeChat()" style="background: none; border: none; font-size: 20px; cursor: pointer;">×</button>
-                    </div>
-                    <div id="chat-messages" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column;"></div>
-                    <div style="padding: 15px; border-top: 1px solid #eee; display: flex;">
-                        <input type="text" id="chat-input" placeholder="输入消息..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                        <button onclick="sendMessage()" style="margin-left: 10px; padding: 10px 20px; background: #4da6ff; color: white; border: none; border-radius: 5px; cursor: pointer;">发送</button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(chatModal);
-            
-            // 加载聊天记录
-            await loadChatMessages();
-            
-            // 开始轮询新消息
-            if (chatInterval) clearInterval(chatInterval);
-            chatInterval = setInterval(loadChatMessages, 2000);
-            
-            // 回车发送消息
-            document.getElementById('chat-input').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendMessage();
-                }
-            });
-        }
+                let isChatOpen = false; // 添加全局变量跟踪聊天状态
 
-        function closeChat() {
-            if (chatInterval) clearInterval(chatInterval);
-            const chatModal = document.getElementById('chat-modal');
-            if (chatModal) {
-                chatModal.remove();
-            }
-            currentChatOrder = null;
+                   async function openChat(orderId, orderType) {
+    // 防止重复打开
+    if (isChatOpen) {
+        return;
+    }
+    
+    isChatOpen = true;
+    
+    // 更新最后阅读时间
+    updateLastReadTime(orderId, orderType);
+    
+    // 刷新未读消息显示
+    await updateTabUnreadBadge();
+    
+    currentChatOrder = { id: orderId, type: orderType };
+    
+    // 创建聊天模态框
+    const chatModal = document.createElement('div');
+    chatModal.id = 'chat-modal';
+    chatModal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    `;
+    
+    chatModal.innerHTML = `
+        <div style="background: white; width: 90%; max-width: 500px; height: 70%; border-radius: 10px; display: flex; flex-direction: column;">
+            <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0;">订单聊天</h3>
+                <button onclick="closeChat()" style="background: none; border: none; font-size: 20px; cursor: pointer;">×</button>
+            </div>
+            <div id="chat-messages" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column;"></div>
+            <div style="padding: 15px; border-top: 1px solid #eee; display: flex;">
+                <input type="text" id="chat-input" placeholder="输入消息..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <button onclick="sendMessage()" style="margin-left: 10px; padding: 10px 20px; background: #4da6ff; color: white; border: none; border-radius: 5px; cursor: pointer;">发送</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(chatModal);
+    
+    // 加载聊天记录
+    await loadChatMessages();
+    
+    // 开始轮询新消息
+    if (chatInterval) clearInterval(chatInterval);
+    chatInterval = setInterval(loadChatMessages, 2000);
+    
+    // 回车发送消息
+    document.getElementById('chat-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
         }
+    });
+}
+
+function closeChat() {
+    isChatOpen = false; // 重置状态
+    
+    if (chatInterval) {
+        clearInterval(chatInterval);
+        chatInterval = null;
+    }
+    
+    const chatModal = document.getElementById('chat-modal');
+    if (chatModal) {
+        chatModal.remove();
+    }
+    currentChatOrder = null;
+    
+    // 关闭聊天后更新未读徽章
+    updateTabUnreadBadge();
+}
 
         async function loadChatMessages() {
             if (!currentChatOrder) return;
@@ -2451,6 +2480,9 @@
                 pageId === 'errand-order-page' || pageId === 'take-errand-page') {
                 autoFillContactInfo();
             }
+            
+            // 每次切换页面都更新未读徽章
+            updateTabUnreadBadge();
         }
             
         // 初始化事件监听器
@@ -2564,10 +2596,11 @@
                         </div>
                     `;
                 } else {
-                    activeOrders.forEach(order => {
-                        const orderItem = createChatOrderItem(order);
+                    for (const order of activeOrders) {
+                        const unreadCount = await getUnreadMessageCount(order.id, order.title ? 'errand' : 'delivery');
+                        const orderItem = createChatOrderItem(order, unreadCount);
                         activeChatOrders.appendChild(orderItem);
-                    });
+                    }
                 }
                 
                 // 渲染已完成的订单
@@ -2580,10 +2613,11 @@
                         </div>
                     `;
                 } else {
-                    completedOrders.forEach(order => {
-                        const orderItem = createChatOrderItem(order);
+                    for (const order of completedOrders) {
+                        const unreadCount = await getUnreadMessageCount(order.id, order.title ? 'errand' : 'delivery');
+                        const orderItem = createChatOrderItem(order, unreadCount);
                         completedChatOrders.appendChild(orderItem);
-                    });
+                    }
                 }
                 
             } catch (error) {
@@ -2599,11 +2633,14 @@
         }
 
         // 创建聊天订单项
-        function createChatOrderItem(order) {
+        function createChatOrderItem(order, unreadCount) {
             const orderItem = document.createElement('div');
             orderItem.className = 'order-item';
             if (order.title) {
                 orderItem.classList.add('errand-item');
+            }
+            if (unreadCount > 0) {
+                orderItem.classList.add('chat-order-unread');
             }
             
             let statusClass = '';
@@ -2648,6 +2685,7 @@
                         ${order.id.slice(-8)}
                         <span class="order-type-tag">${orderType}</span>
                         <span class="order-type-tag">${userRole}</span>
+                        ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}
                     </div>
                     <div class="order-status ${statusClass}">${statusText}</div>
                 </div>
@@ -2697,6 +2735,9 @@
                 if (document.getElementById('take-errand-page').classList.contains('active')) {
                     await renderAvailableErrands();
                 }
+                
+                // 更新未读徽章
+                await updateTabUnreadBadge();
                 
             } catch (error) {
                 console.error('自动刷新失败:', error);
@@ -2766,6 +2807,13 @@
             } catch (error) {
                 console.error('加载统计数据失败:', error);
             }
+            
+            // 启动定时器定期更新未读消息徽章
+            if (unreadUpdateInterval) clearInterval(unreadUpdateInterval);
+            unreadUpdateInterval = setInterval(updateTabUnreadBadge, 1000); // 每10秒更新一次
+            
+            // 初始化未读徽章
+            await updateTabUnreadBadge();
         }
 
         // 启动应用
