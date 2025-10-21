@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -632,6 +633,56 @@
                 padding: 14px 15px;
             }
         }
+		/* 聊天按钮样式 */
+.btn-chat {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.btn-chat:active {
+    background-color: #138496;
+}
+
+.btn-cancel {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.btn-cancel:active {
+    background-color: #e0a800;
+}
+
+/* 聊天模态框样式 */
+.chat-message {
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+.chat-message.own {
+    background: #4da6ff;
+    color: white;
+    align-self: flex-end;
+}
+
+.chat-message.other {
+    background: #f0f0f0;
+    color: #333;
+    align-self: flex-start;
+}
+
+.chat-sender {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.chat-time {
+    font-size: 10px;
+    opacity: 0.6;
+    text-align: right;
+}
     </style>
 </head>
 <body>
@@ -1073,952 +1124,1309 @@
 
     <script>
         // Supabase 配置
-        const SUPABASE_URL = 'https://mdkvoofsjmwxwsfoudbz.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ka3Zvb2Zzam13eHdzZm91ZGJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4ODE2NTgsImV4cCI6MjA3NjQ1NzY1OH0.KXwS4CWYM5RIJ9RzQAVwAn9f1qvDBHykbil0CVykFP8';
+const SUPABASE_URL = 'https://mdkvoofsjmwxwsfoudbz.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ka3Zvb2Zzam13eHdzZm91ZGJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4ODE2NTgsImV4cCI6MjA3NjQ1NzY1OH0.KXwS4CWYM5RIJ9RzQAVwAn9f1qvDBHykbil0CVykFP8';
+
+// 初始化 Supabase 客户端
+let supabase;
+
+// 用户状态管理
+let currentUser = null;
+let currentChatOrder = null;
+let chatInterval = null;
+
+// 生成设备唯一标识
+function generateDeviceId() {
+    let deviceId = localStorage.getItem('deviceId');
+    if (!deviceId) {
+        deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('deviceId', deviceId);
+    }
+    return deviceId;
+}
+
+// 清理无效的用户数据
+function clearInvalidUserData() {
+    try {
+        const userData = localStorage.getItem('currentUser');
+        console.log('检查 localStorage 中的用户数据:', userData);
         
-        // 初始化 Supabase 客户端
-        let supabase;
-        
-        // 用户状态管理
-        let currentUser = null;
-        
-        // 生成设备唯一标识
-        function generateDeviceId() {
-            let deviceId = localStorage.getItem('deviceId');
-            if (!deviceId) {
-                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('deviceId', deviceId);
-            }
-            return deviceId;
+        if (userData && userData === 'superadmin') {
+            console.log('检测到无效的用户数据 "superadmin"，正在清理...');
+            localStorage.removeItem('currentUser');
+            console.log('无效数据已清理完成');
+            return true;
         }
         
-        // 初始化用户
-        function initUser() {
-            const deviceId = generateDeviceId();
-            let user = localStorage.getItem('currentUser');
+        // 检查是否是有效的 JSON
+        if (userData && userData !== 'superadmin') {
+            try {
+                JSON.parse(userData);
+                console.log('用户数据是有效的 JSON');
+            } catch (e) {
+                console.log('用户数据不是有效的 JSON，正在清理...');
+                localStorage.removeItem('currentUser');
+                return true;
+            }
+        }
+        
+        console.log('用户数据正常，无需清理');
+        return false;
+        
+    } catch (error) {
+        console.error('清理用户数据时出错:', error);
+        return false;
+    }
+}
+
+// 初始化用户
+function initUser() {
+    const deviceId = generateDeviceId();
+    let user = localStorage.getItem('currentUser');
+    
+    console.log('从 localStorage 获取的用户数据:', user);
+    
+    if (user) {
+        try {
+            // 尝试解析 JSON
+            currentUser = JSON.parse(user);
+            console.log('成功解析用户数据:', currentUser);
             
-            if (user) {
-                currentUser = JSON.parse(user);
-                if (currentUser.deviceId !== deviceId) {
-                    createNewUser(deviceId);
-                }
-            } else {
+            // 检查设备ID是否匹配
+            if (currentUser.deviceId !== deviceId) {
+                console.log('设备ID不匹配，创建新用户');
                 createNewUser(deviceId);
             }
-            
-            updateUserDisplay();
-            return currentUser;
+        } catch (error) {
+            console.error('解析用户数据失败，将创建新用户:', error);
+            // 如果解析失败，创建新用户
+            createNewUser(deviceId);
         }
-        
-        // 创建新用户
-        function createNewUser(deviceId) {
-            const userId = 'user_' + Date.now();
-            currentUser = {
-                id: userId,
-                deviceId: deviceId,
-                name: '用户' + userId.slice(-6),
-                contactMethod: 'wechat',
-                contactInfo: '',
-                isTaker: false,
-                autoFillContact: true,
-                defaultContactType: 'wechat',
-                defaultContactInfo: '',
-                defaultAddress: '',
-                createdAt: new Date().toISOString()
-            };
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    } else {
+        console.log('未找到用户数据，创建新用户');
+        createNewUser(deviceId);
+    }
+    
+    updateUserDisplay();
+    return currentUser;
+}
+
+// 创建新用户
+function createNewUser(deviceId) {
+    const userId = 'user_' + Date.now();
+    currentUser = {
+        id: userId,
+        deviceId: deviceId,
+        name: '用户' + userId.slice(-6),
+        contactMethod: 'wechat',
+        contactInfo: '',
+        isTaker: false,
+        autoFillContact: true,
+        defaultContactType: 'wechat',
+        defaultContactInfo: '',
+        defaultAddress: '',
+        createdAt: new Date().toISOString()
+    };
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+}
+
+// 保存用户信息
+function saveUser(user) {
+    currentUser = { ...currentUser, ...user };
+    
+    // 确保保存的是有效的 JSON
+    try {
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        console.log('用户数据已保存:', currentUser);
+    } catch (error) {
+        console.error('保存用户数据失败:', error);
+    }
+    
+    updateUserDisplay();
+}
+
+// 更新用户显示
+function updateUserDisplay() {
+    if (!currentUser) return;
+    
+    document.getElementById('user-display-name').textContent = currentUser.name;
+    document.getElementById('user-display-id').textContent = 'ID: ' + currentUser.id.slice(-8);
+    document.getElementById('user-avatar').textContent = currentUser.name.charAt(0);
+    
+    // 更新设置页面用户信息
+    document.getElementById('settings-user-name').textContent = currentUser.name;
+    document.getElementById('settings-user-id').textContent = 'ID: ' + currentUser.id.slice(-8);
+    document.getElementById('settings-user-avatar').textContent = currentUser.name.charAt(0);
+    
+    // 更新设置页面详细信息
+    document.getElementById('display-user-name').textContent = currentUser.name;
+    document.getElementById('display-user-id').textContent = currentUser.id;
+    
+    // 更新默认信息设置
+    document.getElementById('auto-fill-toggle').checked = currentUser.autoFillContact;
+    document.getElementById('default-contact-info').value = currentUser.defaultContactInfo || '';
+    document.getElementById('default-address').value = currentUser.defaultAddress || '';
+    
+    // 更新设置页面的默认联系方式类型
+    const settingsContactBtns = document.querySelectorAll('#settings-page .contact-type-btn');
+    settingsContactBtns.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.type === currentUser.defaultContactType) {
+            btn.classList.add('active');
         }
-        
-        // 保存用户信息
-        function saveUser(user) {
-            currentUser = { ...currentUser, ...user };
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            updateUserDisplay();
+    });
+}
+
+// 保存默认信息
+function saveDefaultInfo() {
+    const autoFill = document.getElementById('auto-fill-toggle').checked;
+    const contactInfo = document.getElementById('default-contact-info').value;
+    const address = document.getElementById('default-address').value;
+    
+    // 获取默认联系方式类型
+    const activeContactBtn = document.querySelector('#settings-page .contact-type-btn.active');
+    const defaultContactType = activeContactBtn ? activeContactBtn.dataset.type : 'wechat';
+    
+    saveUser({
+        autoFillContact: autoFill,
+        defaultContactType: defaultContactType,
+        defaultContactInfo: contactInfo,
+        defaultAddress: address
+    });
+    
+    alert('默认信息已保存！');
+}
+
+// 自动填充联系信息
+function autoFillContactInfo() {
+    if (!currentUser.autoFillContact) return;
+    
+    // 填充代取快递发布页
+    if (currentUser.defaultContactInfo) {
+        document.getElementById('contact-info').value = currentUser.defaultContactInfo;
+        document.getElementById('errand-contact-info').value = currentUser.defaultContactInfo;
+    }
+    
+    // 填充代取快递领取页
+    document.getElementById('taker-contact-info').value = currentUser.defaultContactInfo || '';
+    
+    // 填充跑腿领取页
+    document.getElementById('errand-taker-contact-info').value = currentUser.defaultContactInfo || '';
+    
+    // 填充姓名
+    if (currentUser.name) {
+        document.getElementById('contact-name').value = currentUser.name;
+        document.getElementById('errand-contact-name').value = currentUser.name;
+        document.getElementById('taker-name').value = currentUser.name;
+        document.getElementById('errand-taker-name').value = currentUser.name;
+    }
+    
+    // 填充地址
+    if (currentUser.defaultAddress) {
+        document.getElementById('delivery-address').value = currentUser.defaultAddress;
+        document.getElementById('errand-delivery').value = currentUser.defaultAddress;
+    }
+    
+    // 填充联系方式类型
+    const contactTypeBtns = document.querySelectorAll('.contact-type-btn');
+    contactTypeBtns.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.type === currentUser.defaultContactType) {
+            btn.classList.add('active');
         }
-        
-        // 更新用户显示
-        function updateUserDisplay() {
-            if (!currentUser) return;
-            
-            document.getElementById('user-display-name').textContent = currentUser.name;
-            document.getElementById('user-display-id').textContent = 'ID: ' + currentUser.id.slice(-8);
-            document.getElementById('user-avatar').textContent = currentUser.name.charAt(0);
-            
-            // 更新设置页面用户信息
-            document.getElementById('settings-user-name').textContent = currentUser.name;
-            document.getElementById('settings-user-id').textContent = 'ID: ' + currentUser.id.slice(-8);
-            document.getElementById('settings-user-avatar').textContent = currentUser.name.charAt(0);
-            
-            // 更新设置页面详细信息
-            document.getElementById('display-user-name').textContent = currentUser.name;
-            document.getElementById('display-user-id').textContent = currentUser.id;
-            
-            // 更新默认信息设置
-            document.getElementById('auto-fill-toggle').checked = currentUser.autoFillContact;
-            document.getElementById('default-contact-info').value = currentUser.defaultContactInfo || '';
-            document.getElementById('default-address').value = currentUser.defaultAddress || '';
-            
-            // 更新设置页面的默认联系方式类型
-            const settingsContactBtns = document.querySelectorAll('#settings-page .contact-type-btn');
-            settingsContactBtns.forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.type === currentUser.defaultContactType) {
-                    btn.classList.add('active');
-                }
+    });
+}
+
+// 联系方式类型选择
+function initContactTypeSelectors() {
+    document.querySelectorAll('.contact-type-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // 移除同组其他按钮的active类
+            const parent = this.closest('.contact-type-selector');
+            parent.querySelectorAll('.contact-type-btn').forEach(b => {
+                b.classList.remove('active');
             });
+            // 为当前按钮添加active类
+            this.classList.add('active');
+        });
+    });
+}
+
+// 获取当前选中的联系方式类型
+function getSelectedContactType(containerId) {
+    const selector = document.querySelector(`#${containerId} .contact-type-btn.active`);
+    return selector ? selector.dataset.type : 'wechat';
+}
+
+// 进入代取快递服务
+function enterDeliveryService() {
+    document.getElementById('navbar-title').textContent = '代取快递服务';
+    showPage('delivery-home-page');
+    renderDeliveryOrders();
+}
+
+// 进入跑腿服务
+function enterErrandService() {
+    document.getElementById('navbar-title').textContent = '校园跑腿服务';
+    showPage('errand-home-page');
+    renderErrandOrders();
+}
+
+// 获取所有订单（代取快递）
+async function getDeliveryOrders() {
+    try {
+        const { data, error } = await supabase
+            .from('delivery_orders')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('获取代取订单失败:', error);
+        throw error;
+    }
+}
+
+// 获取所有跑腿任务
+async function getErrandOrders() {
+    try {
+        const { data, error } = await supabase
+            .from('errand_orders')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('获取跑腿任务失败:', error);
+        throw error;
+    }
+}
+
+// 保存订单
+async function saveOrder(order) {
+    try {
+        console.log('正在保存订单到数据库...', order);
+        
+        const orderData = {
+            delivery_time: new Date(order.deliveryTime).toISOString(),
+            pickup_address: order.pickupAddress,
+            delivery_address: order.deliveryAddress,
+            pickup_code: order.pickupCode,
+            contact_name: order.contactName,
+            contact_info: order.contactInfo,
+            contact_type: order.contactType,
+            reward: parseFloat(order.reward),
+            notes: order.notes,
+            status: 'pending',
+            created_by: order.createdBy
+        };
+        
+        console.log('转换后的订单数据:', orderData);
+        
+        const { data, error } = await supabase
+            .from('delivery_orders')
+            .insert([orderData])
+            .select();
+        
+        if (error) {
+            console.error('数据库插入错误:', error);
+            console.error('错误详情:', error.details);
+            console.error('错误提示:', error.message);
+            console.error('错误代码:', error.code);
+            throw error;
         }
         
-        // 保存默认信息
-        function saveDefaultInfo() {
-            const autoFill = document.getElementById('auto-fill-toggle').checked;
-            const contactInfo = document.getElementById('default-contact-info').value;
-            const address = document.getElementById('default-address').value;
-            
-            // 获取默认联系方式类型
-            const activeContactBtn = document.querySelector('#settings-page .contact-type-btn.active');
-            const defaultContactType = activeContactBtn ? activeContactBtn.dataset.type : 'wechat';
-            
-            saveUser({
-                autoFillContact: autoFill,
-                defaultContactType: defaultContactType,
-                defaultContactInfo: contactInfo,
-                defaultAddress: address
-            });
-            
-            alert('默认信息已保存！');
+        console.log('订单保存成功，返回数据:', data);
+        return data[0];
+        
+    } catch (error) {
+        console.error('保存订单完整错误:', error);
+        throw error;
+    }
+}
+
+// 保存跑腿任务
+async function saveErrandOrder(order) {
+    try {
+        console.log('正在保存跑腿任务到数据库...', order);
+        
+        const orderData = {
+            title: order.title,
+            description: order.description,
+            pickup_location: order.pickupLocation,
+            delivery_location: order.deliveryLocation,
+            deadline: new Date(order.deadline).toISOString(),
+            reward: parseFloat(order.reward),
+            contact_name: order.contactName,
+            contact_info: order.contactInfo,
+            contact_type: order.contactType,
+            notes: order.notes,
+            status: 'pending',
+            created_by: order.createdBy
+        };
+        
+        console.log('转换后的跑腿任务数据:', orderData);
+        
+        const { data, error } = await supabase
+            .from('errand_orders')
+            .insert([orderData])
+            .select();
+        
+        if (error) {
+            console.error('数据库插入错误:', error);
+            console.error('错误详情:', error.details);
+            console.error('错误提示:', error.message);
+            console.error('错误代码:', error.code);
+            throw error;
         }
         
-        // 自动填充联系信息
-        function autoFillContactInfo() {
-            if (!currentUser.autoFillContact) return;
-            
-            // 填充代取快递发布页
-            if (currentUser.defaultContactInfo) {
-                document.getElementById('contact-info').value = currentUser.defaultContactInfo;
-                document.getElementById('errand-contact-info').value = currentUser.defaultContactInfo;
-            }
-            
-            // 填充代取快递领取页
-            document.getElementById('taker-contact-info').value = currentUser.defaultContactInfo || '';
-            
-            // 填充跑腿领取页
-            document.getElementById('errand-taker-contact-info').value = currentUser.defaultContactInfo || '';
-            
-            // 填充姓名
-            if (currentUser.name) {
-                document.getElementById('contact-name').value = currentUser.name;
-                document.getElementById('errand-contact-name').value = currentUser.name;
-                document.getElementById('taker-name').value = currentUser.name;
-                document.getElementById('errand-taker-name').value = currentUser.name;
-            }
-            
-            // 填充地址
-            if (currentUser.defaultAddress) {
-                document.getElementById('delivery-address').value = currentUser.defaultAddress;
-                document.getElementById('errand-delivery').value = currentUser.defaultAddress;
-            }
-            
-            // 填充联系方式类型
-            const contactTypeBtns = document.querySelectorAll('.contact-type-btn');
-            contactTypeBtns.forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.type === currentUser.defaultContactType) {
-                    btn.classList.add('active');
-                }
-            });
-        }
+        console.log('跑腿任务保存成功，返回数据:', data);
+        return data[0];
+    } catch (error) {
+        console.error('保存跑腿任务完整错误:', error);
+        throw error;
+    }
+}
+
+// 更新订单
+async function updateOrder(orderId, updates) {
+    try {
+        const updateData = {
+            ...updates,
+            updated_at: new Date().toISOString()
+        };
         
-        // 联系方式类型选择
-        function initContactTypeSelectors() {
-            document.querySelectorAll('.contact-type-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    // 移除同组其他按钮的active类
-                    const parent = this.closest('.contact-type-selector');
-                    parent.querySelectorAll('.contact-type-btn').forEach(b => {
-                        b.classList.remove('active');
-                    });
-                    // 为当前按钮添加active类
-                    this.classList.add('active');
-                });
-            });
-        }
+        const { data, error } = await supabase
+            .from('delivery_orders')
+            .update(updateData)
+            .eq('id', orderId)
+            .select();
         
-        // 获取当前选中的联系方式类型
-        function getSelectedContactType(containerId) {
-            const selector = document.querySelector(`#${containerId} .contact-type-btn.active`);
-            return selector ? selector.dataset.type : 'wechat';
-        }
+        if (error) throw error;
+        return data[0];
+    } catch (error) {
+        console.error('更新订单失败:', error);
+        throw error;
+    }
+}
+
+// 更新跑腿任务
+async function updateErrandOrder(orderId, updates) {
+    try {
+        const updateData = {
+            ...updates,
+            updated_at: new Date().toISOString()
+        };
         
-        // 进入代取快递服务
-        function enterDeliveryService() {
-            document.getElementById('navbar-title').textContent = '代取快递服务';
-            showPage('delivery-home-page');
-            renderDeliveryOrders();
-        }
+        const { data, error } = await supabase
+            .from('errand_orders')
+            .update(updateData)
+            .eq('id', orderId)
+            .select();
         
-        // 进入跑腿服务
-        function enterErrandService() {
-            document.getElementById('navbar-title').textContent = '校园跑腿服务';
-            showPage('errand-home-page');
-            renderErrandOrders();
-        }
+        if (error) throw error;
+        return data[0];
+    } catch (error) {
+        console.error('更新跑腿任务失败:', error);
+        throw error;
+    }
+}
+
+// 渲染代取快递订单
+async function renderDeliveryOrders() {
+    const ordersList = document.getElementById('delivery-orders-list');
+    
+    try {
+        const orders = await getDeliveryOrders();
+        ordersList.innerHTML = '';
         
-        // 获取所有订单（代取快递）
-        async function getDeliveryOrders() {
-            try {
-                const { data, error } = await supabase
-                    .from('delivery_orders')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                
-                if (error) throw error;
-                return data || [];
-            } catch (error) {
-                console.error('获取代取订单失败:', error);
-                throw error;
-            }
-        }
-        
-        // 获取所有跑腿任务
-        async function getErrandOrders() {
-            try {
-                const { data, error } = await supabase
-                    .from('errand_orders')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                
-                if (error) throw error;
-                return data || [];
-            } catch (error) {
-                console.error('获取跑腿任务失败:', error);
-                throw error;
-            }
-        }
-        
-        // 保存订单
-        async function saveOrder(order) {
-            try {
-                const orderData = {
-                    delivery_time: new Date(order.deliveryTime).toISOString(),
-                    pickup_address: order.pickupAddress,
-                    delivery_address: order.deliveryAddress,
-                    pickup_code: order.pickupCode,
-                    contact_name: order.contactName,
-                    contact_info: order.contactInfo,
-                    contact_type: order.contactType,
-                    reward: parseFloat(order.reward),
-                    notes: order.notes,
-                    status: 'pending',
-                    created_by: order.createdBy
-                };
-                
-                const { data, error } = await supabase
-                    .from('delivery_orders')
-                    .insert([orderData])
-                    .select();
-                
-                if (error) throw error;
-                return data[0];
-            } catch (error) {
-                console.error('保存订单失败:', error);
-                throw error;
-            }
-        }
-        
-        // 保存跑腿任务
-        async function saveErrandOrder(order) {
-            try {
-                const orderData = {
-                    title: order.title,
-                    description: order.description,
-                    pickup_location: order.pickupLocation,
-                    delivery_location: order.deliveryLocation,
-                    deadline: new Date(order.deadline).toISOString(),
-                    reward: parseFloat(order.reward),
-                    contact_name: order.contactName,
-                    contact_info: order.contactInfo,
-                    contact_type: order.contactType,
-                    notes: order.notes,
-                    status: 'pending',
-                    created_by: order.createdBy
-                };
-                
-                const { data, error } = await supabase
-                    .from('errand_orders')
-                    .insert([orderData])
-                    .select();
-                
-                if (error) throw error;
-                return data[0];
-            } catch (error) {
-                console.error('保存跑腿任务失败:', error);
-                throw error;
-            }
-        }
-        
-        // 更新订单
-        async function updateOrder(orderId, updates) {
-            try {
-                const updateData = {
-                    ...updates,
-                    updated_at: new Date().toISOString()
-                };
-                
-                const { data, error } = await supabase
-                    .from('delivery_orders')
-                    .update(updateData)
-                    .eq('id', orderId)
-                    .select();
-                
-                if (error) throw error;
-                return data[0];
-            } catch (error) {
-                console.error('更新订单失败:', error);
-                throw error;
-            }
-        }
-        
-        // 更新跑腿任务
-        async function updateErrandOrder(orderId, updates) {
-            try {
-                const updateData = {
-                    ...updates,
-                    updated_at: new Date().toISOString()
-                };
-                
-                const { data, error } = await supabase
-                    .from('errand_orders')
-                    .update(updateData)
-                    .eq('id', orderId)
-                    .select();
-                
-                if (error) throw error;
-                return data[0];
-            } catch (error) {
-                console.error('更新跑腿任务失败:', error);
-                throw error;
-            }
-        }
-        
-        // 渲染代取快递订单
-        async function renderDeliveryOrders() {
-            const ordersList = document.getElementById('delivery-orders-list');
-            
-            try {
-                const orders = await getDeliveryOrders();
-                ordersList.innerHTML = '';
-                
-                const myOrders = orders.filter(order => 
-                    order.created_by === currentUser.id || order.taken_by === currentUser.id
-                );
-                
-                // 更新首页统计数据
-                updateMainPageStats();
-                
-                if (myOrders.length === 0) {
-                    ordersList.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-inbox"></i>
-                            <p>您还没有发布或接取任何代取订单</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                myOrders.forEach(order => {
-                    const orderItem = document.createElement('div');
-                    orderItem.className = 'order-item';
-                    
-                    let statusClass = '';
-                    let statusText = '';
-                    
-                    switch(order.status) {
-                        case 'pending':
-                            statusClass = 'status-pending';
-                            statusText = '待接单';
-                            break;
-                        case 'taken':
-                            statusClass = 'status-taken';
-                            statusText = '已接单';
-                            break;
-                        case 'processing':
-                            statusClass = 'status-processing';
-                            statusText = '配送中';
-                            break;
-                        case 'completed':
-                            statusClass = 'status-completed';
-                            statusText = '已完成';
-                            break;
-                        case 'cancelled':
-                            statusClass = 'status-cancelled';
-                            statusText = '已取消';
-                            break;
-                    }
-                    
-                    // 判断订单类型
-                    const isMyOrder = order.created_by === currentUser.id;
-                    const orderType = isMyOrder ? '我发布的' : '我接取的';
-                    
-                    orderItem.innerHTML = `
-                        <div class="order-header">
-                            <div class="order-id">
-                                ${order.id}
-                                <span class="order-type-tag">${orderType}</span>
-                            </div>
-                            <div class="order-status ${statusClass}">${statusText}</div>
-                        </div>
-                        <div class="order-details">
-                            <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
-                            <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
-                            <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
-                            <div class="order-detail"><strong>状态:</strong> ${statusText}</div>
-                        </div>
-                    `;
-                    
-                    ordersList.appendChild(orderItem);
-                });
-                
-            } catch (error) {
-                ordersList.innerHTML = `
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>加载代取订单失败: ${error.message}</p>
-                    </div>
-                `;
-            }
-        }
-        
-        // 渲染跑腿任务
-        async function renderErrandOrders() {
-            const ordersList = document.getElementById('errand-orders-list');
-            
-            try {
-                const orders = await getErrandOrders();
-                ordersList.innerHTML = '';
-                
-                const myOrders = orders.filter(order => 
-                    order.created_by === currentUser.id || order.taken_by === currentUser.id
-                );
-                
-                // 更新首页统计数据
-                updateMainPageStats();
-                
-                if (myOrders.length === 0) {
-                    ordersList.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-tasks"></i>
-                            <p>您还没有发布或接取任何跑腿任务</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                myOrders.forEach(order => {
-                    const orderItem = document.createElement('div');
-                    orderItem.className = 'order-item errand-item';
-                    
-                    let statusClass = '';
-                    let statusText = '';
-                    
-                    switch(order.status) {
-                        case 'pending':
-                            statusClass = 'status-pending';
-                            statusText = '待接单';
-                            break;
-                        case 'taken':
-                            statusClass = 'status-taken';
-                            statusText = '已接单';
-                            break;
-                        case 'processing':
-                            statusClass = 'status-processing';
-                            statusText = '进行中';
-                            break;
-                        case 'completed':
-                            statusClass = 'status-completed';
-                            statusText = '已完成';
-                            break;
-                        case 'cancelled':
-                            statusClass = 'status-cancelled';
-                            statusText = '已取消';
-                            break;
-                    }
-                    
-                    // 判断任务类型
-                    const isMyOrder = order.created_by === currentUser.id;
-                    const orderType = isMyOrder ? '我发布的' : '我接取的';
-                    
-                    orderItem.innerHTML = `
-                        <div class="order-header">
-                            <div class="order-id errand-id">
-                                ${order.id}
-                                <span class="order-type-tag">${orderType}</span>
-                            </div>
-                            <div class="order-status ${statusClass}">${statusText}</div>
-                        </div>
-                        <div class="order-details">
-                            <div class="order-detail"><strong>任务:</strong> ${order.title}</div>
-                            <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
-                            <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
-                            <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
-                            <div class="order-detail"><strong>状态:</strong> ${statusText}</div>
-                        </div>
-                    `;
-                    
-                    ordersList.appendChild(orderItem);
-                });
-                
-            } catch (error) {
-                ordersList.innerHTML = `
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>加载跑腿任务失败: ${error.message}</p>
-                    </div>
-                `;
-            }
-        }
+        const myOrders = orders.filter(order => 
+            order.created_by === currentUser.id || order.taken_by === currentUser.id
+        );
         
         // 更新首页统计数据
-        async function updateMainPageStats() {
-            try {
-                const [deliveryOrders, errandOrders] = await Promise.all([
-                    getDeliveryOrders(),
-                    getErrandOrders()
-                ]);
-                
-                const myDeliveryOrders = deliveryOrders.filter(order => 
-                    order.created_by === currentUser.id || order.taken_by === currentUser.id
-                );
-                
-                const myErrandOrders = errandOrders.filter(order => 
-                    order.created_by === currentUser.id || order.taken_by === currentUser.id
-                );
-                
-                const totalOrders = myDeliveryOrders.length + myErrandOrders.length;
-                const completedDelivery = myDeliveryOrders.filter(order => order.status === 'completed').length;
-                const completedErrand = myErrandOrders.filter(order => order.status === 'completed').length;
-                const totalCompleted = completedDelivery + completedErrand;
-                
-                document.getElementById('my-orders-count').textContent = totalOrders;
-                document.getElementById('completed-orders-count').textContent = totalCompleted;
-            } catch (error) {
-                console.error('更新首页统计失败:', error);
-            }
+        updateMainPageStats();
+        
+        if (myOrders.length === 0) {
+            ordersList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>您还没有发布或接取任何代取订单</p>
+                </div>
+            `;
+            return;
         }
         
-        // 渲染可接取的代取订单
-        async function renderAvailableOrders() {
-            const ordersList = document.getElementById('available-orders-list');
+        myOrders.forEach(order => {
+            const orderItem = document.createElement('div');
+            orderItem.className = 'order-item';
             
-            try {
-                const orders = await getDeliveryOrders();
-                ordersList.innerHTML = '';
-                
-                const availableOrders = orders.filter(order => order.status === 'pending');
-                
-                if (availableOrders.length === 0) {
-                    ordersList.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-box-open"></i>
-                            <p>暂无待接单的订单</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                availableOrders.forEach(order => {
-                    const orderItem = document.createElement('div');
-                    orderItem.className = 'order-item';
-                    
-                    orderItem.innerHTML = `
-                        <div class="order-header">
-                            <div class="order-id">${order.id}</div>
-                            <div class="order-status status-pending">待接单</div>
-                        </div>
-                        <div class="order-details">
-                            <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
-                            <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
-                            <div class="order-detail"><strong>期望时间:</strong> ${new Date(order.delivery_time).toLocaleString()}</div>
-                            <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
-                        </div>
-                        <div class="order-actions">
-                            <button class="action-btn btn-take" data-id="${order.id}">接单</button>
-                        </div>
-                    `;
-                    
-                    ordersList.appendChild(orderItem);
-                });
-                
-                // 添加接单按钮事件
-                document.querySelectorAll('.btn-take').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const orderId = this.dataset.id;
-                        takeOrder(orderId);
-                    });
-                });
-                
-            } catch (error) {
-                ordersList.innerHTML = `
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>加载订单失败: ${error.message}</p>
+            let statusClass = '';
+            let statusText = '';
+            
+            switch(order.status) {
+                case 'pending':
+                    statusClass = 'status-pending';
+                    statusText = '待接单';
+                    break;
+                case 'taken':
+                    statusClass = 'status-taken';
+                    statusText = '已接单';
+                    break;
+                case 'processing':
+                    statusClass = 'status-processing';
+                    statusText = '配送中';
+                    break;
+                case 'completed':
+                    statusClass = 'status-completed';
+                    statusText = '已完成';
+                    break;
+                case 'cancelled':
+                    statusClass = 'status-cancelled';
+                    statusText = '已取消';
+                    break;
+            }
+            
+            // 判断订单类型
+            const isMyOrder = order.created_by === currentUser.id;
+            const orderType = isMyOrder ? '我发布的' : '我接取的';
+            
+            orderItem.innerHTML = `
+                <div class="order-header">
+                    <div class="order-id">
+                        ${order.id.slice(-8)}
+                        <span class="order-type-tag">${orderType}</span>
                     </div>
-                `;
-            }
+                    <div class="order-status ${statusClass}">${statusText}</div>
+                </div>
+                <div class="order-details">
+                    <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
+                    <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
+                    <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                    <div class="order-detail"><strong>状态:</strong> ${statusText}</div>
+                    ${order.taken_by ? `<div class="order-detail"><strong>接单人:</strong> ${order.taker_name || '未知用户'}</div>` : ''}
+                </div>
+                <div class="order-actions">
+                    ${order.status === 'taken' && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
+                        `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'delivery')">联系对方</button>` : ''}
+                    ${order.status === 'taken' && order.taken_by === currentUser.id ? 
+                        `<button class="action-btn btn-cancel" onclick="cancelTakeOrder('${order.id}', 'delivery')">取消接单</button>` : ''}
+                    ${order.status === 'taken' && order.created_by === currentUser.id ? 
+                        `<button class="action-btn btn-cancel" onclick="cancelOrder('${order.id}', 'delivery')">取消订单</button>` : ''}
+                    ${order.status === 'pending' && order.created_by === currentUser.id ? 
+                        `<button class="action-btn btn-cancel" onclick="cancelOrder('${order.id}', 'delivery')">取消订单</button>` : ''}
+                </div>
+            `;
+            
+            ordersList.appendChild(orderItem);
+        });
+        
+    } catch (error) {
+        ordersList.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>加载代取订单失败: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// 渲染跑腿任务
+async function renderErrandOrders() {
+    const ordersList = document.getElementById('errand-orders-list');
+    
+    try {
+        const orders = await getErrandOrders();
+        ordersList.innerHTML = '';
+        
+        const myOrders = orders.filter(order => 
+            order.created_by === currentUser.id || order.taken_by === currentUser.id
+        );
+        
+        // 更新首页统计数据
+        updateMainPageStats();
+        
+        if (myOrders.length === 0) {
+            ordersList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-tasks"></i>
+                    <p>您还没有发布或接取任何跑腿任务</p>
+                </div>
+            `;
+            return;
         }
         
-        // 渲染可接取的跑腿任务
-        async function renderAvailableErrands() {
-            const errandsList = document.getElementById('available-errands-list');
+        myOrders.forEach(order => {
+            const orderItem = document.createElement('div');
+            orderItem.className = 'order-item errand-item';
             
-            try {
-                const orders = await getErrandOrders();
-                errandsList.innerHTML = '';
-                
-                const availableErrands = orders.filter(order => order.status === 'pending');
-                
-                if (availableErrands.length === 0) {
-                    errandsList.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-tasks"></i>
-                            <p>暂无待接单的跑腿任务</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                availableErrands.forEach(order => {
-                    const orderItem = document.createElement('div');
-                    orderItem.className = 'order-item errand-item';
-                    
-                    orderItem.innerHTML = `
-                        <div class="order-header">
-                            <div class="order-id errand-id">${order.id}</div>
-                            <div class="order-status status-pending">待接单</div>
-                        </div>
-                        <div class="order-details">
-                            <div class="order-detail"><strong>任务:</strong> ${order.title}</div>
-                            <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
-                            <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
-                            <div class="order-detail"><strong>截止时间:</strong> ${new Date(order.deadline).toLocaleString()}</div>
-                            <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
-                        </div>
-                        <div class="order-actions">
-                            <button class="action-btn btn-take-errand" data-id="${order.id}">接单</button>
-                        </div>
-                    `;
-                    
-                    errandsList.appendChild(orderItem);
-                });
-                
-                // 添加接单按钮事件
-                document.querySelectorAll('.btn-take-errand').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const orderId = this.dataset.id;
-                        takeErrandOrder(orderId);
-                    });
-                });
-                
-            } catch (error) {
-                errandsList.innerHTML = `
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>加载跑腿任务失败: ${error.message}</p>
+            let statusClass = '';
+            let statusText = '';
+            
+            switch(order.status) {
+                case 'pending':
+                    statusClass = 'status-pending';
+                    statusText = '待接单';
+                    break;
+                case 'taken':
+                    statusClass = 'status-taken';
+                    statusText = '已接单';
+                    break;
+                case 'processing':
+                    statusClass = 'status-processing';
+                    statusText = '进行中';
+                    break;
+                case 'completed':
+                    statusClass = 'status-completed';
+                    statusText = '已完成';
+                    break;
+                case 'cancelled':
+                    statusClass = 'status-cancelled';
+                    statusText = '已取消';
+                    break;
+            }
+            
+            // 判断任务类型
+            const isMyOrder = order.created_by === currentUser.id;
+            const orderType = isMyOrder ? '我发布的' : '我接取的';
+            
+            orderItem.innerHTML = `
+                <div class="order-header">
+                    <div class="order-id errand-id">
+                        ${order.id.slice(-8)}
+                        <span class="order-type-tag">${orderType}</span>
                     </div>
-                `;
-            }
+                    <div class="order-status ${statusClass}">${statusText}</div>
+                </div>
+                <div class="order-details">
+                    <div class="order-detail"><strong>任务:</strong> ${order.title}</div>
+                    <div class="order-detail"><strong>描述:</strong> ${order.description}</div>
+                    <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
+                    <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
+                    <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                    <div class="order-detail"><strong>状态:</strong> ${statusText}</div>
+                    ${order.taken_by ? `<div class="order-detail"><strong>接单人:</strong> ${order.taker_name || '未知用户'}</div>` : ''}
+                </div>
+                <div class="order-actions">
+                    ${order.status === 'taken' && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
+                        `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'errand')">联系对方</button>` : ''}
+                    ${order.status === 'taken' && order.taken_by === currentUser.id ? 
+                        `<button class="action-btn btn-cancel" onclick="cancelTakeOrder('${order.id}', 'errand')">取消接单</button>` : ''}
+                    ${order.status === 'taken' && order.created_by === currentUser.id ? 
+                        `<button class="action-btn btn-cancel" onclick="cancelOrder('${order.id}', 'errand')">取消订单</button>` : ''}
+                    ${order.status === 'pending' && order.created_by === currentUser.id ? 
+                        `<button class="action-btn btn-cancel" onclick="cancelOrder('${order.id}', 'errand')">取消订单</button>` : ''}
+                </div>
+            `;
+            
+            ordersList.appendChild(orderItem);
+        });
+        
+    } catch (error) {
+        ordersList.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>加载跑腿任务失败: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// 更新首页统计数据
+async function updateMainPageStats() {
+    try {
+        const [deliveryOrders, errandOrders] = await Promise.all([
+            getDeliveryOrders(),
+            getErrandOrders()
+        ]);
+        
+        const myDeliveryOrders = deliveryOrders.filter(order => 
+            order.created_by === currentUser.id || order.taken_by === currentUser.id
+        );
+        
+        const myErrandOrders = errandOrders.filter(order => 
+            order.created_by === currentUser.id || order.taken_by === currentUser.id
+        );
+        
+        const totalOrders = myDeliveryOrders.length + myErrandOrders.length;
+        const completedDelivery = myDeliveryOrders.filter(order => order.status === 'completed').length;
+        const completedErrand = myErrandOrders.filter(order => order.status === 'completed').length;
+        const totalCompleted = completedDelivery + completedErrand;
+        
+        document.getElementById('my-orders-count').textContent = totalOrders;
+        document.getElementById('completed-orders-count').textContent = totalCompleted;
+    } catch (error) {
+        console.error('更新首页统计失败:', error);
+    }
+}
+
+// 渲染可接取的代取订单
+async function renderAvailableOrders() {
+    const ordersList = document.getElementById('available-orders-list');
+    
+    try {
+        const orders = await getDeliveryOrders();
+        ordersList.innerHTML = '';
+        
+        const availableOrders = orders.filter(order => order.status === 'pending');
+        
+        if (availableOrders.length === 0) {
+            ordersList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-box-open"></i>
+                    <p>暂无待接单的订单</p>
+                </div>
+            `;
+            return;
         }
         
-        // 接取代取订单
-        async function takeOrder(orderId) {
-            if (!currentUser.name || !currentUser.contactInfo) {
-                alert('请先填写您的姓名和联系方式！');
-                return;
-            }
+        availableOrders.forEach(order => {
+            const orderItem = document.createElement('div');
+            orderItem.className = 'order-item';
             
-            try {
-                await updateOrder(orderId, {
-                    status: 'taken',
-                    taken_by: currentUser.id,
-                    taker_name: currentUser.name,
-                    taker_contact: currentUser.contactInfo,
-                    taker_contact_type: currentUser.defaultContactType
-                });
-                
-                alert('接单成功！请尽快联系下单人确认细节。');
-                renderAvailableOrders();
-                renderDeliveryOrders();
-            } catch (error) {
-                alert('接单失败，请重试！');
-                console.error(error);
-            }
-        }
+            orderItem.innerHTML = `
+                <div class="order-header">
+                    <div class="order-id">${order.id.slice(-8)}</div>
+                    <div class="order-status status-pending">待接单</div>
+                </div>
+                <div class="order-details">
+                    <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
+                    <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
+                    <div class="order-detail"><strong>期望时间:</strong> ${new Date(order.delivery_time).toLocaleString()}</div>
+                    <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                </div>
+                <div class="order-actions">
+                    <button class="action-btn btn-take" data-id="${order.id}">接单</button>
+                </div>
+            `;
+            
+            ordersList.appendChild(orderItem);
+        });
         
-        // 接取跑腿任务
-        async function takeErrandOrder(orderId) {
-            if (!currentUser.name || !currentUser.contactInfo) {
-                alert('请先填写您的姓名和联系方式！');
-                return;
-            }
-            
-            try {
-                await updateErrandOrder(orderId, {
-                    status: 'taken',
-                    taken_by: currentUser.id,
-                    taker_name: currentUser.name,
-                    taker_contact: currentUser.contactInfo,
-                    taker_contact_type: currentUser.defaultContactType
-                });
-                
-                alert('接单成功！请尽快联系发布人确认细节。');
-                renderAvailableErrands();
-                renderErrandOrders();
-            } catch (error) {
-                alert('接单失败，请重试！');
-                console.error(error);
-            }
-        }
-        
-        // 发布代取订单
-        async function submitOrder() {
-            const deliveryTime = document.getElementById('delivery-time').value;
-            const pickupAddress = document.getElementById('pickup-address').value;
-            const deliveryAddress = document.getElementById('delivery-address').value;
-            const pickupCode = document.getElementById('pickup-code').value;
-            const contactName = document.getElementById('contact-name').value;
-            const contactInfo = document.getElementById('contact-info').value;
-            const contactType = getSelectedContactType('order-page');
-            const reward = document.getElementById('reward').value || 5;
-            const notes = document.getElementById('notes').value;
-            
-            if (!deliveryTime || !pickupAddress || !deliveryAddress || 
-                !pickupCode || !contactName || !contactInfo) {
-                alert('请填写所有必填字段！');
-                return;
-            }
-            
-            try {
-                const newOrder = {
-                    deliveryTime: deliveryTime,
-                    pickupAddress: pickupAddress,
-                    deliveryAddress: deliveryAddress,
-                    pickupCode: pickupCode,
-                    contactName: contactName,
-                    contactInfo: contactInfo,
-                    contactType: contactType,
-                    reward: reward,
-                    notes: notes,
-                    status: 'pending',
-                    createdBy: currentUser.id
-                };
-                
-                await saveOrder(newOrder);
-                
-                // 重置表单
-                document.getElementById('pickup-address').value = '';
-                document.getElementById('delivery-address').value = '';
-                document.getElementById('pickup-code').value = '';
-                document.getElementById('contact-name').value = '';
-                document.getElementById('contact-info').value = '';
-                document.getElementById('reward').value = '5';
-                document.getElementById('notes').value = '';
-                
-                alert('代取请求已提交！');
-                showPage('delivery-home-page');
-                
-                await renderDeliveryOrders();
-            } catch (error) {
-                console.error('提交订单错误详情:', error);
-                alert('提交订单失败，请检查网络连接！');
-            }
-        }
-        
-        // 发布跑腿任务
-        async function submitErrandOrder() {
-            const title = document.getElementById('errand-title').value;
-            const description = document.getElementById('errand-description').value;
-            const pickupLocation = document.getElementById('errand-pickup').value;
-            const deliveryLocation = document.getElementById('errand-delivery').value;
-            const deadline = document.getElementById('errand-deadline').value;
-            const reward = document.getElementById('errand-reward').value;
-            const contactName = document.getElementById('errand-contact-name').value;
-            const contactInfo = document.getElementById('errand-contact-info').value;
-            const contactType = getSelectedContactType('errand-order-page');
-            const notes = document.getElementById('errand-notes').value;
-            
-            if (!title || !description || !pickupLocation || !deliveryLocation || 
-                !deadline || !reward || !contactName || !contactInfo) {
-                alert('请填写所有必填字段！');
-                return;
-            }
-            
-            try {
-                const newOrder = {
-                    title: title,
-                    description: description,
-                    pickupLocation: pickupLocation,
-                    deliveryLocation: deliveryLocation,
-                    deadline: deadline,
-                    reward: reward,
-                    contactName: contactName,
-                    contactInfo: contactInfo,
-                    contactType: contactType,
-                    notes: notes,
-                    status: 'pending',
-                    createdBy: currentUser.id
-                };
-                
-                await saveErrandOrder(newOrder);
-                
-                // 重置表单
-                document.getElementById('errand-title').value = '';
-                document.getElementById('errand-description').value = '';
-                document.getElementById('errand-pickup').value = '';
-                document.getElementById('errand-delivery').value = '';
-                document.getElementById('errand-reward').value = '3';
-                document.getElementById('errand-contact-name').value = '';
-                document.getElementById('errand-contact-info').value = '';
-                document.getElementById('errand-notes').value = '';
-                
-                alert('跑腿任务已提交！');
-                showPage('errand-home-page');
-                
-                await renderErrandOrders();
-            } catch (error) {
-                console.error('提交跑腿任务错误详情:', error);
-                alert('提交任务失败，请检查网络连接！');
-            }
-        }
-        
-        // 页面切换函数
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
+        // 添加接单按钮事件
+        document.querySelectorAll('.btn-take').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const orderId = this.dataset.id;
+                takeOrder(orderId);
             });
-            document.getElementById(pageId).classList.add('active');
+        });
+        
+    } catch (error) {
+        ordersList.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>加载订单失败: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// 渲染可接取的跑腿任务
+async function renderAvailableErrands() {
+    const errandsList = document.getElementById('available-errands-list');
+    
+    try {
+        const orders = await getErrandOrders();
+        errandsList.innerHTML = '';
+        
+        const availableErrands = orders.filter(order => order.status === 'pending');
+        
+        if (availableErrands.length === 0) {
+            errandsList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-tasks"></i>
+                    <p>暂无待接单的跑腿任务</p>
+                </div>
+            `;
+            return;
+        }
+        
+        availableErrands.forEach(order => {
+            const orderItem = document.createElement('div');
+            orderItem.className = 'order-item errand-item';
             
-            // 更新底部导航激活状态
-            document.querySelectorAll('.tab-item').forEach(tab => {
-                tab.classList.remove('active');
+            orderItem.innerHTML = `
+                <div class="order-header">
+                    <div class="order-id errand-id">${order.id.slice(-8)}</div>
+                    <div class="order-status status-pending">待接单</div>
+                </div>
+                <div class="order-details">
+                    <div class="order-detail"><strong>任务:</strong> ${order.title}</div>
+                    <div class="order-detail"><strong>描述:</strong> ${order.description}</div>
+                    <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
+                    <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
+                    <div class="order-detail"><strong>截止时间:</strong> ${new Date(order.deadline).toLocaleString()}</div>
+                    <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                </div>
+                <div class="order-actions">
+                    <button class="action-btn btn-take-errand" data-id="${order.id}">接单</button>
+                </div>
+            `;
+            
+            errandsList.appendChild(orderItem);
+        });
+        
+        // 添加接单按钮事件
+        document.querySelectorAll('.btn-take-errand').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const orderId = this.dataset.id;
+                takeErrandOrder(orderId);
             });
-            
-            if (pageId === 'main-page') {
-                document.getElementById('navbar-title').textContent = '校园服务平台';
-                document.querySelectorAll('.tab-item')[0].classList.add('active');
-                updateMainPageStats();
-            } else if (pageId === 'delivery-home-page') {
-                document.querySelectorAll('.tab-item')[1].classList.add('active');
-            } else if (pageId === 'errand-home-page') {
-                document.querySelectorAll('.tab-item')[2].classList.add('active');
-            } else if (pageId === 'settings-page') {
-                document.querySelectorAll('.tab-item')[3].classList.add('active');
-                updateUserDisplay();
-            }
-            
-            // 自动填充联系信息
-            if (pageId === 'order-page' || pageId === 'take-order-page' || 
-                pageId === 'errand-order-page' || pageId === 'take-errand-page') {
-                autoFillContactInfo();
-            }
-        }
+        });
         
-        // 初始化事件监听器
-        function initEventListeners() {
-            // 发布代取订单
-            document.getElementById('submit-order').addEventListener('click', submitOrder);
-            
-            // 发布跑腿任务
-            document.getElementById('submit-errand-order').addEventListener('click', submitErrandOrder);
-            
-            // 授权代取联系方式
-            document.getElementById('auth-contact').addEventListener('click', function() {
-                const takerName = document.getElementById('taker-name').value;
-                const takerContactInfo = document.getElementById('taker-contact-info').value;
-                const contactType = getSelectedContactType('take-order-page');
-                
-                if (!takerName || !takerContactInfo) {
-                    alert('请填写您的姓名和联系方式！');
-                    return;
-                }
-                
-                saveUser({
-                    name: takerName,
-                    contactInfo: takerContactInfo,
-                    defaultContactType: contactType,
-                    isTaker: true
-                });
-                
-                document.getElementById('available-orders').style.display = 'block';
-                renderAvailableOrders();
+    } catch (error) {
+        errandsList.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>加载跑腿任务失败: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// 接取代取订单
+async function takeOrder(orderId) {
+    if (!currentUser.name || !currentUser.contactInfo) {
+        alert('请先填写您的姓名和联系方式！');
+        return;
+    }
+    
+    try {
+        await updateOrder(orderId, {
+            status: 'taken',
+            taken_by: currentUser.id,
+            taker_name: currentUser.name,
+            taker_contact: currentUser.contactInfo,
+            taker_contact_type: currentUser.defaultContactType
+        });
+        
+        alert('接单成功！请尽快联系下单人确认细节。');
+        renderAvailableOrders();
+        renderDeliveryOrders();
+    } catch (error) {
+        alert('接单失败，请重试！');
+        console.error(error);
+    }
+}
+
+// 接取跑腿任务
+async function takeErrandOrder(orderId) {
+    if (!currentUser.name || !currentUser.contactInfo) {
+        alert('请先填写您的姓名和联系方式！');
+        return;
+    }
+    
+    try {
+        await updateErrandOrder(orderId, {
+            status: 'taken',
+            taken_by: currentUser.id,
+            taker_name: currentUser.name,
+            taker_contact: currentUser.contactInfo,
+            taker_contact_type: currentUser.defaultContactType
+        });
+        
+        alert('接单成功！请尽快联系发布人确认细节。');
+        renderAvailableErrands();
+        renderErrandOrders();
+    } catch (error) {
+        alert('接单失败，请重试！');
+        console.error(error);
+    }
+}
+
+// 取消接单
+async function cancelTakeOrder(orderId, orderType) {
+    if (!confirm('确定要取消接单吗？')) return;
+    
+    try {
+        if (orderType === 'delivery') {
+            await updateOrder(orderId, {
+                status: 'pending',
+                taken_by: null,
+                taker_name: null,
+                taker_contact: null,
+                taker_contact_type: null
             });
-            
-            // 授权跑腿联系方式
-            document.getElementById('auth-errand-contact').addEventListener('click', function() {
-                const takerName = document.getElementById('errand-taker-name').value;
-                const takerContactInfo = document.getElementById('errand-taker-contact-info').value;
-                const contactType = getSelectedContactType('take-errand-page');
-                
-                if (!takerName || !takerContactInfo) {
-                    alert('请填写您的姓名和联系方式！');
-                    return;
-                }
-                
-                saveUser({
-                    name: takerName,
-                    contactInfo: takerContactInfo,
-                    defaultContactType: contactType,
-                    isTaker: true
-                });
-                
-                document.getElementById('available-errands').style.display = 'block';
-                renderAvailableErrands();
+        } else {
+            await updateErrandOrder(orderId, {
+                status: 'pending',
+                taken_by: null,
+                taker_name: null,
+                taker_contact: null,
+                taker_contact_type: null
             });
         }
         
-        // 编辑用户名
-        function editUserName() {
-            const newName = prompt('请输入新的用户名：', currentUser.name);
-            if (newName && newName.trim() !== '') {
-                saveUser({ name: newName.trim() });
-            }
+        alert('取消接单成功！');
+        if (orderType === 'delivery') {
+            renderDeliveryOrders();
+        } else {
+            renderErrandOrders();
+        }
+    } catch (error) {
+        alert('取消接单失败，请重试！');
+        console.error(error);
+    }
+}
+
+// 取消订单
+async function cancelOrder(orderId, orderType) {
+    if (!confirm('确定要取消订单吗？')) return;
+    
+    try {
+        if (orderType === 'delivery') {
+            await updateOrder(orderId, {
+                status: 'cancelled'
+            });
+        } else {
+            await updateErrandOrder(orderId, {
+                status: 'cancelled'
+            });
         }
         
-        // 退出登录
-        function logout() {
-            if (confirm('确定要退出登录吗？这将重置您的账户信息。')) {
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('deviceId');
-                location.reload();
-            }
+        alert('订单已取消！');
+        if (orderType === 'delivery') {
+            renderDeliveryOrders();
+        } else {
+            renderErrandOrders();
+        }
+    } catch (error) {
+        alert('取消订单失败，请重试！');
+        console.error(error);
+    }
+}
+
+// 发布代取订单
+async function submitOrder() {
+    const deliveryTime = document.getElementById('delivery-time').value;
+    const pickupAddress = document.getElementById('pickup-address').value;
+    const deliveryAddress = document.getElementById('delivery-address').value;
+    const pickupCode = document.getElementById('pickup-code').value;
+    const contactName = document.getElementById('contact-name').value;
+    const contactInfo = document.getElementById('contact-info').value;
+    const contactType = getSelectedContactType('order-page');
+    const reward = document.getElementById('reward').value || 5;
+    const notes = document.getElementById('notes').value;
+    
+    console.log('开始提交订单，表单数据:', {
+        deliveryTime, pickupAddress, deliveryAddress, pickupCode,
+        contactName, contactInfo, contactType, reward, notes
+    });
+    
+    if (!deliveryTime || !pickupAddress || !deliveryAddress || 
+        !pickupCode || !contactName || !contactInfo) {
+        alert('请填写所有必填字段！');
+        return;
+    }
+    
+    try {
+        const newOrder = {
+            deliveryTime: deliveryTime,
+            pickupAddress: pickupAddress,
+            deliveryAddress: deliveryAddress,
+            pickupCode: pickupCode,
+            contactName: contactName,
+            contactInfo: contactInfo,
+            contactType: contactType,
+            reward: reward,
+            notes: notes,
+            status: 'pending',
+            createdBy: currentUser.id
+        };
+        
+        console.log('准备提交订单:', newOrder);
+        
+        const result = await saveOrder(newOrder);
+        console.log('订单提交成功:', result);
+        
+        // 重置表单
+        document.getElementById('pickup-address').value = '';
+        document.getElementById('delivery-address').value = '';
+        document.getElementById('pickup-code').value = '';
+        document.getElementById('contact-name').value = '';
+        document.getElementById('contact-info').value = '';
+        document.getElementById('reward').value = '5';
+        document.getElementById('notes').value = '';
+        
+        alert('代取请求已提交成功！');
+        showPage('delivery-home-page');
+        
+        // 刷新订单列表
+        await renderDeliveryOrders();
+        
+    } catch (error) {
+        console.error('提交订单完整错误:', error);
+        
+        let errorMessage = '提交订单失败，请重试！';
+        if (error.message) {
+            errorMessage += '\n错误信息: ' + error.message;
+        }
+        alert(errorMessage);
+    }
+}
+
+// 发布跑腿任务
+async function submitErrandOrder() {
+    const title = document.getElementById('errand-title').value;
+    const description = document.getElementById('errand-description').value;
+    const pickupLocation = document.getElementById('errand-pickup').value;
+    const deliveryLocation = document.getElementById('errand-delivery').value;
+    const deadline = document.getElementById('errand-deadline').value;
+    const reward = document.getElementById('errand-reward').value;
+    const contactName = document.getElementById('errand-contact-name').value;
+    const contactInfo = document.getElementById('errand-contact-info').value;
+    const contactType = getSelectedContactType('errand-order-page');
+    const notes = document.getElementById('errand-notes').value;
+    
+    if (!title || !description || !pickupLocation || !deliveryLocation || 
+        !deadline || !reward || !contactName || !contactInfo) {
+        alert('请填写所有必填字段！');
+        return;
+    }
+    
+    try {
+        const newOrder = {
+            title: title,
+            description: description,
+            pickupLocation: pickupLocation,
+            deliveryLocation: deliveryLocation,
+            deadline: deadline,
+            reward: reward,
+            contactName: contactName,
+            contactInfo: contactInfo,
+            contactType: contactType,
+            notes: notes,
+            status: 'pending',
+            createdBy: currentUser.id
+        };
+        
+        await saveErrandOrder(newOrder);
+        
+        // 重置表单
+        document.getElementById('errand-title').value = '';
+        document.getElementById('errand-description').value = '';
+        document.getElementById('errand-pickup').value = '';
+        document.getElementById('errand-delivery').value = '';
+        document.getElementById('errand-reward').value = '3';
+        document.getElementById('errand-contact-name').value = '';
+        document.getElementById('errand-contact-info').value = '';
+        document.getElementById('errand-notes').value = '';
+        
+        alert('跑腿任务已提交！');
+        showPage('errand-home-page');
+        
+        await renderErrandOrders();
+    } catch (error) {
+        console.error('提交跑腿任务错误详情:', error);
+        alert('提交任务失败，请检查网络连接！');
+    }
+}
+
+// 聊天功能
+async function openChat(orderId, orderType) {
+    currentChatOrder = { id: orderId, type: orderType };
+    
+    // 创建聊天模态框
+    const chatModal = document.createElement('div');
+    chatModal.id = 'chat-modal';
+    chatModal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    `;
+    
+    chatModal.innerHTML = `
+        <div style="background: white; width: 90%; max-width: 500px; height: 70%; border-radius: 10px; display: flex; flex-direction: column;">
+            <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0;">订单聊天</h3>
+                <button onclick="closeChat()" style="background: none; border: none; font-size: 20px; cursor: pointer;">×</button>
+            </div>
+            <div id="chat-messages" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column;"></div>
+            <div style="padding: 15px; border-top: 1px solid #eee; display: flex;">
+                <input type="text" id="chat-input" placeholder="输入消息..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <button onclick="sendMessage()" style="margin-left: 10px; padding: 10px 20px; background: #4da6ff; color: white; border: none; border-radius: 5px; cursor: pointer;">发送</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(chatModal);
+    
+    // 加载聊天记录
+    await loadChatMessages();
+    
+    // 开始轮询新消息
+    if (chatInterval) clearInterval(chatInterval);
+    chatInterval = setInterval(loadChatMessages, 2000);
+    
+    // 回车发送消息
+    document.getElementById('chat-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+}
+
+function closeChat() {
+    if (chatInterval) clearInterval(chatInterval);
+    const chatModal = document.getElementById('chat-modal');
+    if (chatModal) {
+        chatModal.remove();
+    }
+    currentChatOrder = null;
+}
+
+async function loadChatMessages() {
+    if (!currentChatOrder) return;
+    
+    try {
+        const { data, error } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .eq('order_id', currentChatOrder.id)
+            .eq('order_type', currentChatOrder.type)
+            .order('created_at', { ascending: true });
+        
+        if (error) throw error;
+        
+        const chatMessages = document.getElementById('chat-messages');
+        chatMessages.innerHTML = '';
+        
+        data.forEach(msg => {
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                margin-bottom: 10px;
+                padding: 8px 12px;
+                border-radius: 10px;
+                max-width: 80%;
+                word-wrap: break-word;
+                ${msg.sender_id === currentUser.id ? 
+                    'background: #4da6ff; color: white; align-self: flex-end;' : 
+                    'background: #f0f0f0; color: #333; align-self: flex-start;'}
+            `;
+            
+            messageDiv.innerHTML = `
+                <div style="font-size: 12px; opacity: 0.8;">${msg.sender_name}</div>
+                <div>${msg.message_text}</div>
+                <div style="font-size: 10px; opacity: 0.6; text-align: right;">${new Date(msg.created_at).toLocaleTimeString()}</div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+        });
+        
+        // 滚动到底部
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    } catch (error) {
+        console.error('加载聊天记录失败:', error);
+    }
+}
+
+async function sendMessage() {
+    if (!currentChatOrder) return;
+    
+    const input = document.getElementById('chat-input');
+    const messageText = input.value.trim();
+    
+    if (!messageText) return;
+    
+    try {
+        const { error } = await supabase
+            .from('chat_messages')
+            .insert([{
+                order_id: currentChatOrder.id,
+                order_type: currentChatOrder.type,
+                sender_id: currentUser.id,
+                sender_name: currentUser.name,
+                message_text: messageText
+            }]);
+        
+        if (error) throw error;
+        
+        input.value = '';
+        await loadChatMessages();
+    } catch (error) {
+        console.error('发送消息失败:', error);
+        alert('发送消息失败，请重试！');
+    }
+}
+
+// 页面切换函数
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    document.getElementById(pageId).classList.add('active');
+    
+    // 更新底部导航激活状态
+    document.querySelectorAll('.tab-item').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    if (pageId === 'main-page') {
+        document.getElementById('navbar-title').textContent = '校园服务平台';
+        document.querySelectorAll('.tab-item')[0].classList.add('active');
+        updateMainPageStats();
+    } else if (pageId === 'delivery-home-page') {
+        document.querySelectorAll('.tab-item')[1].classList.add('active');
+    } else if (pageId === 'errand-home-page') {
+        document.querySelectorAll('.tab-item')[2].classList.add('active');
+    } else if (pageId === 'settings-page') {
+        document.querySelectorAll('.tab-item')[3].classList.add('active');
+        updateUserDisplay();
+    }
+    
+    // 自动填充联系信息
+    if (pageId === 'order-page' || pageId === 'take-order-page' || 
+        pageId === 'errand-order-page' || pageId === 'take-errand-page') {
+        autoFillContactInfo();
+    }
+}
+
+// 初始化事件监听器
+function initEventListeners() {
+    // 发布代取订单
+    document.getElementById('submit-order').addEventListener('click', submitOrder);
+    
+    // 发布跑腿任务
+    document.getElementById('submit-errand-order').addEventListener('click', submitErrandOrder);
+    
+    // 授权代取联系方式
+    document.getElementById('auth-contact').addEventListener('click', function() {
+        const takerName = document.getElementById('taker-name').value;
+        const takerContactInfo = document.getElementById('taker-contact-info').value;
+        const contactType = getSelectedContactType('take-order-page');
+        
+        if (!takerName || !takerContactInfo) {
+            alert('请填写您的姓名和联系方式！');
+            return;
         }
         
-        // 初始化应用
-        async function initApp() {
-            // 初始化 Supabase 客户端
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            
-            // 初始化用户
-            initUser();
-            
-            // 初始化联系方式选择器
-            initContactTypeSelectors();
-            
-            // 设置默认的期望送达时间为当前时间后2小时
-            const now = new Date();
-            now.setHours(now.getHours() + 2);
-            document.getElementById('delivery-time').value = now.toISOString().slice(0, 16);
-            
-            // 设置默认的跑腿截止时间为当前时间后2小时
-            document.getElementById('errand-deadline').value = now.toISOString().slice(0, 16);
-            
-            // 初始化事件监听器
-            initEventListeners();
-            
-            // 初始加载首页统计
-            await updateMainPageStats();
+        saveUser({
+            name: takerName,
+            contactInfo: takerContactInfo,
+            defaultContactType: contactType,
+            isTaker: true
+        });
+        
+        document.getElementById('available-orders').style.display = 'block';
+        renderAvailableOrders();
+    });
+    
+    // 授权跑腿联系方式
+    document.getElementById('auth-errand-contact').addEventListener('click', function() {
+        const takerName = document.getElementById('errand-taker-name').value;
+        const takerContactInfo = document.getElementById('errand-taker-contact-info').value;
+        const contactType = getSelectedContactType('take-errand-page');
+        
+        if (!takerName || !takerContactInfo) {
+            alert('请填写您的姓名和联系方式！');
+            return;
         }
         
-        // 启动应用
-        document.addEventListener('DOMContentLoaded', initApp);
+        saveUser({
+            name: takerName,
+            contactInfo: takerContactInfo,
+            defaultContactType: contactType,
+            isTaker: true
+        });
+        
+        document.getElementById('available-errands').style.display = 'block';
+        renderAvailableErrands();
+    });
+}
+
+// 编辑用户名
+function editUserName() {
+    const newName = prompt('请输入新的用户名：', currentUser.name);
+    if (newName && newName.trim() !== '') {
+        saveUser({ name: newName.trim() });
+    }
+}
+
+// 退出登录
+function logout() {
+    if (confirm('确定要退出登录吗？这将重置您的账户信息。')) {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('deviceId');
+        location.reload();
+    }
+}
+
+// 初始化应用
+async function initApp() {
+    // 清理可能存在的无效用户数据
+    clearInvalidUserData();
+    
+    // 检查网络连接
+    if (!navigator.onLine) {
+        alert('网络连接不可用，请检查网络设置');
+        return;
+    }
+    
+    console.log('开始初始化应用...');
+    
+    try {
+        // 初始化 Supabase 客户端
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Supabase 客户端初始化完成');
+        
+        // 测试 Supabase 连接
+        console.log('正在测试数据库连接...');
+        const { data, error } = await supabase
+            .from('delivery_orders')
+            .select('id')
+            .limit(1);
+            
+        if (error) {
+            console.error('Supabase 连接测试失败:', error);
+            alert('数据库连接失败: ' + error.message);
+            return;
+        }
+        
+        console.log('Supabase 连接成功，可以正常访问数据库');
+        
+    } catch (error) {
+        console.error('初始化失败:', error);
+        alert('应用初始化失败: ' + error.message);
+        return;
+    }
+    
+    // 初始化用户
+    initUser();
+    
+    // 初始化联系方式选择器
+    initContactTypeSelectors();
+    
+    // 设置默认的期望送达时间为当前时间后2小时
+    const now = new Date();
+    now.setHours(now.getHours() + 2);
+    document.getElementById('delivery-time').value = now.toISOString().slice(0, 16);
+    
+    // 设置默认的跑腿截止时间为当前时间后2小时
+    document.getElementById('errand-deadline').value = now.toISOString().slice(0, 16);
+    
+    // 初始化事件监听器
+    initEventListeners();
+    
+    // 初始加载首页统计
+    try {
+        await updateMainPageStats();
+        console.log('应用初始化完成');
+    } catch (error) {
+        console.error('加载统计数据失败:', error);
+    }
+}
+
+// 启动应用
+document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
