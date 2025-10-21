@@ -1029,6 +1029,31 @@
             </div>
         </div>
         
+                <!-- 聊天主页面 -->
+        <div id="chat-home-page" class="page">
+            <div class="card">
+                <button class="btn btn-secondary" onclick="showPage('main-page')" style="margin-bottom: 15px;">
+                    <i class="fas fa-arrow-left"></i> 返回首页
+                </button>
+                <h2>我的聊天</h2>
+                <p>查看所有订单的聊天记录</p>
+            </div>
+            
+            <h3 style="margin: 20px 0 10px;">进行中的订单</h3>
+            <div class="order-list" id="active-chat-orders">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> 加载中...
+                </div>
+            </div>
+            
+            <h3 style="margin: 20px 0 10px;">已完成的订单</h3>
+            <div class="order-list" id="completed-chat-orders">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> 加载中...
+                </div>
+            </div>
+        </div>
+
         <!-- 设置页面 -->
         <div id="settings-page" class="page">
             <div class="card">
@@ -1115,6 +1140,10 @@
         <div class="tab-item" onclick="enterErrandService()">
             <div class="tab-icon"><i class="fas fa-running"></i></div>
             <div>跑腿</div>
+        </div>
+        <div class="tab-item" onclick="showPage('chat-home-page')">
+            <div class="tab-icon"><i class="fas fa-comments"></i></div>
+            <div>聊天</div>
         </div>
         <div class="tab-item" onclick="showPage('settings-page')">
             <div class="tab-icon"><i class="fas fa-cog"></i></div>
@@ -1905,6 +1934,10 @@ async function takeOrder(orderId) {
         alert('接单成功！请尽快联系下单人确认细节。');
         renderAvailableOrders();
         renderDeliveryOrders();
+        
+        // 添加这行代码 - 自动刷新所有页面数据
+        await refreshAllPages();
+        
     } catch (error) {
         alert('接单失败，请重试！');
         console.error(error);
@@ -1930,6 +1963,9 @@ async function takeErrandOrder(orderId) {
         alert('接单成功！请尽快联系发布人确认细节。');
         renderAvailableErrands();
         renderErrandOrders();
+
+        await refreshAllPages();
+
     } catch (error) {
         alert('接单失败，请重试！');
         console.error(error);
@@ -1965,6 +2001,9 @@ async function cancelTakeOrder(orderId, orderType) {
         } else {
             renderErrandOrders();
         }
+
+        await refreshAllPages();
+
     } catch (error) {
         alert('取消接单失败，请重试！');
         console.error(error);
@@ -1992,6 +2031,9 @@ async function cancelOrder(orderId, orderType) {
         } else {
             renderErrandOrders();
         }
+
+        await refreshAllPages();
+
     } catch (error) {
         alert('取消订单失败，请重试！');
         console.error(error);
@@ -2056,6 +2098,9 @@ async function submitOrder() {
         // 刷新订单列表
         await renderDeliveryOrders();
         
+        // 添加这行 - 自动刷新所有页面数据
+        await refreshAllPages();
+        
     } catch (error) {
         console.error('提交订单完整错误:', error);
         
@@ -2118,6 +2163,10 @@ async function submitErrandOrder() {
         showPage('errand-home-page');
         
         await renderErrandOrders();
+        
+        // 添加这行 - 自动刷新所有页面数据
+        await refreshAllPages();
+        
     } catch (error) {
         console.error('提交跑腿任务错误详情:', error);
         alert('提交任务失败，请检查网络连接！');
@@ -2278,8 +2327,12 @@ function showPage(pageId) {
         document.querySelectorAll('.tab-item')[1].classList.add('active');
     } else if (pageId === 'errand-home-page') {
         document.querySelectorAll('.tab-item')[2].classList.add('active');
-    } else if (pageId === 'settings-page') {
+    } else if (pageId === 'chat-home-page') {
+        document.getElementById('navbar-title').textContent = '我的聊天';
         document.querySelectorAll('.tab-item')[3].classList.add('active');
+        renderChatHome();
+    } else if (pageId === 'settings-page') {
+        document.querySelectorAll('.tab-item')[4].classList.add('active');
         updateUserDisplay();
     }
     
@@ -2289,7 +2342,7 @@ function showPage(pageId) {
         autoFillContactInfo();
     }
 }
-
+    
 // 初始化事件监听器
 function initEventListeners() {
     // 发布代取订单
@@ -2357,6 +2410,186 @@ function logout() {
         localStorage.removeItem('currentUser');
         localStorage.removeItem('deviceId');
         location.reload();
+    }
+}
+
+// 渲染聊天主页
+async function renderChatHome() {
+    const activeChatOrders = document.getElementById('active-chat-orders');
+    const completedChatOrders = document.getElementById('completed-chat-orders');
+    
+    try {
+        const [deliveryOrders, errandOrders] = await Promise.all([
+            getDeliveryOrders(),
+            getErrandOrders()
+        ]);
+        
+        // 获取当前用户相关的订单
+        const myDeliveryOrders = deliveryOrders.filter(order => 
+            order.created_by === currentUser.id || order.taken_by === currentUser.id
+        );
+        
+        const myErrandOrders = errandOrders.filter(order => 
+            order.created_by === currentUser.id || order.taken_by === currentUser.id
+        );
+        
+        const allOrders = [...myDeliveryOrders, ...myErrandOrders];
+        
+        // 分离进行中和已完成的订单
+        const activeOrders = allOrders.filter(order => 
+            order.status === 'taken' || order.status === 'processing'
+        );
+        
+        const completedOrders = allOrders.filter(order => 
+            order.status === 'completed' || order.status === 'cancelled'
+        );
+        
+        // 渲染进行中的订单
+        activeChatOrders.innerHTML = '';
+        if (activeOrders.length === 0) {
+            activeChatOrders.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-comments"></i>
+                    <p>暂无进行中的订单</p>
+                </div>
+            `;
+        } else {
+            activeOrders.forEach(order => {
+                const orderItem = createChatOrderItem(order);
+                activeChatOrders.appendChild(orderItem);
+            });
+        }
+        
+        // 渲染已完成的订单
+        completedChatOrders.innerHTML = '';
+        if (completedOrders.length === 0) {
+            completedChatOrders.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <p>暂无已完成的订单</p>
+                </div>
+            `;
+        } else {
+            completedOrders.forEach(order => {
+                const orderItem = createChatOrderItem(order);
+                completedChatOrders.appendChild(orderItem);
+            });
+        }
+        
+    } catch (error) {
+        console.error('加载聊天主页失败:', error);
+        activeChatOrders.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>加载失败: ${error.message}</p>
+            </div>
+        `;
+        completedChatOrders.innerHTML = '';
+    }
+}
+
+// 创建聊天订单项
+function createChatOrderItem(order) {
+    const orderItem = document.createElement('div');
+    orderItem.className = 'order-item';
+    if (order.title) {
+        orderItem.classList.add('errand-item');
+    }
+    
+    let statusClass = '';
+    let statusText = '';
+    
+    switch(order.status) {
+        case 'pending':
+            statusClass = 'status-pending';
+            statusText = '待接单';
+            break;
+        case 'taken':
+            statusClass = 'status-taken';
+            statusText = '已接单';
+            break;
+        case 'processing':
+            statusClass = 'status-processing';
+            statusText = '进行中';
+            break;
+        case 'completed':
+            statusClass = 'status-completed';
+            statusText = '已完成';
+            break;
+        case 'cancelled':
+            statusClass = 'status-cancelled';
+            statusText = '已取消';
+            break;
+    }
+    
+    // 判断订单类型
+    const isDelivery = !order.title;
+    const orderType = isDelivery ? '快递' : '跑腿';
+    const orderTitle = isDelivery ? '代取快递' : order.title;
+    
+    // 判断用户角色
+    const isMyOrder = order.created_by === currentUser.id;
+    const userRole = isMyOrder ? '发布者' : '接单者';
+    const otherUserName = isMyOrder ? (order.taker_name || '等待接单') : order.contact_name;
+    
+    orderItem.innerHTML = `
+        <div class="order-header">
+            <div class="order-id">
+                ${order.id.slice(-8)}
+                <span class="order-type-tag">${orderType}</span>
+                <span class="order-type-tag">${userRole}</span>
+            </div>
+            <div class="order-status ${statusClass}">${statusText}</div>
+        </div>
+        <div class="order-details">
+            <div class="order-detail"><strong>${isDelivery ? '快递' : '任务'}:</strong> ${orderTitle}</div>
+            <div class="order-detail"><strong>对方:</strong> ${otherUserName}</div>
+            <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+        </div>
+        <div class="order-actions">
+            ${(order.status === 'taken' || order.status === 'processing') ? 
+                `<button class="action-btn btn-chat" onclick="openChat('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">进入聊天</button>` : ''}
+        </div>
+    `;
+    
+    return orderItem;
+}
+
+// 自动刷新页面数据
+async function refreshAllPages() {
+    console.log('自动刷新页面数据...');
+    
+    try {
+        // 刷新首页统计
+        await updateMainPageStats();
+        
+        // 如果当前在代取快递页面，刷新代取订单列表
+        if (document.getElementById('delivery-home-page').classList.contains('active')) {
+            await renderDeliveryOrders();
+        }
+        
+        // 如果当前在跑腿页面，刷新跑腿订单列表
+        if (document.getElementById('errand-home-page').classList.contains('active')) {
+            await renderErrandOrders();
+        }
+        
+        // 如果当前在聊天页面，刷新聊天列表
+        if (document.getElementById('chat-home-page').classList.contains('active')) {
+            await renderChatHome();
+        }
+        
+        // 如果当前在接单页面，刷新可接订单列表
+        if (document.getElementById('take-order-page').classList.contains('active')) {
+            await renderAvailableOrders();
+        }
+        
+        // 如果当前在接跑腿页面，刷新可接跑腿列表
+        if (document.getElementById('take-errand-page').classList.contains('active')) {
+            await renderAvailableErrands();
+        }
+        
+    } catch (error) {
+        console.error('自动刷新失败:', error);
     }
 }
 
@@ -2430,3 +2663,4 @@ document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
+
