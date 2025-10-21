@@ -663,21 +663,53 @@
         
         /* 未读消息徽章样式 */
         .unread-badge {
-            position: absolute;
-            top: -2px;
-            right: -2px;
-            background-color: #ff4757;
-            color: white;
-            border-radius: 10px;
-            min-width: 18px;
-            height: 18px;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 4px;
-            font-weight: bold;
-        }
+             position: absolute;
+                top: -2px;
+                right: -2px;
+                background-color: #ff4757;
+                color: white;
+                border-radius: 10px;
+                min-width: 18px;
+                height: 18px;
+                font-size: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0 4px;
+                font-weight: bold;
+              box-shadow: 0 2px 4px rgba(255, 71, 87, 0.3); /* 添加阴影增强视觉效果 */
+              border: 2px solid white; /* 添加白色边框使其更醒目 */
+              z-index: 10; /* 确保在最上层 */
+}
+
+/* 增强有未读消息的订单项视觉效果 */
+.chat-order-unread {
+    border-left: 4px solid #ff4757 !important;
+    background-color: #fff9f9 !important; /* 添加浅红色背景 */
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.15) !important; /* 增强阴影 */
+}
+
+.chat-order-unread .order-header {
+    font-weight: bold;
+    color: #d63031; /* 标题文字颜色加深 */
+}
+
+/* 为订单ID添加特殊样式 */
+.order-id.has-unread {
+    font-weight: 700;
+    color: #d63031;
+}
+
+/* 为有未读消息的订单添加闪烁动画 */
+@keyframes pulse-unread {
+    0% { background-color: #fff9f9; }
+    50% { background-color: #ffe6e6; }
+    100% { background-color: #fff9f9; }
+}
+
+.chat-order-unread.new-message {
+    animation: pulse-unread 2s ease-in-out;
+}
         
         .chat-order-unread {
             border-left: 4px solid #ff4757 !important;
