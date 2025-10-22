@@ -663,42 +663,41 @@
         
         /* 未读消息徽章样式 */
         .unread-badge {
-             position: absolute;
-                top: -2px;
-                right: -2px;
-                background-color: #ff4757;
-                color: white;
-                border-radius: 10px;
-                min-width: 18px;
-                height: 18px;
-                font-size: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 0 4px;
-                font-weight: bold;
-              box-shadow: 0 2px 4px rgba(255, 71, 87, 0.3); /* 添加阴影增强视觉效果 */
-              border: 2px solid white; /* 添加白色边框使其更醒目 */
-              z-index: 10; /* 确保在最上层 */
-}
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #ff4757;
+            color: white;
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(255, 71, 87, 0.3);
+            border: 2px solid white;
+            z-index: 10;
+        }
 
-/* 增强有未读消息的订单项视觉效果 */
-.chat-order-unread {
-    border-left: 4px solid #ff4757 !important;
-    background-color: #fff9f9 !important; /* 添加浅红色背景 */
-    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.15) !important; /* 增强阴影 */
-}
+        /* 增强有未读消息的订单项视觉效果 */
+        .chat-order-unread {
+            border-left: 4px solid #ff4757 !important;
+            background-color: #fff9f9 !important;
+            box-shadow: 0 2px 8px rgba(255, 71, 87, 0.15) !important;
+        }
 
-.chat-order-unread .order-header {
-    font-weight: bold;
-    color: #d63031; /* 标题文字颜色加深 */
-}
+        .chat-order-unread .order-header {
+            font-weight: bold;
+        }
 
-/* 为订单ID添加特殊样式 */
-.order-id.has-unread {
-    font-weight: 700;
-    color: #d63031;
-}
+        /* 为订单ID添加特殊样式 */
+        .order-id.has-unread {
+             font-weight: 700;
+            color: #d63031;
+        }
 
 /* 为有未读消息的订单添加闪烁动画 */
 @keyframes pulse-unread {
@@ -718,7 +717,60 @@
         .chat-order-unread .order-header {
             font-weight: bold;
         }
+
+        /* 聊天按钮徽章样式 */
+        .btn-chat {
+            position: relative;
+        }
+
+        .chat-btn-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+             background-color: #ff4757;
+             color: white;
+            border-radius: 50%;
+            min-width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(255, 71, 87, 0.3);
+            border: 2px solid white;
+        }
         
+        /* 订单标签页样式 */
+        .order-tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .order-tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #666;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .order-tab-btn.active {
+            color: #4da6ff;
+            border-bottom-color: #4da6ff;
+            font-weight: 500;
+        }
+
+        .order-tab-btn:hover {
+            background-color: #f5f5f5;
+        }
+
         /* 响应式设计 */
         @media (max-width: 768px) {
             .container {
@@ -762,14 +814,14 @@
             </div>
             
             <div class="user-stats">
-                <div class="stat-item">
+                <div class="stat-item" onclick="showMyOrders()" style="cursor: pointer;">
                     <div class="stat-value" id="my-orders-count">0</div>
-                    <div class="stat-label">我的订单</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="completed-orders-count">0</div>
-                    <div class="stat-label">已完成</div>
-                </div>
+                        <div class="stat-label">我的订单</div>
+                    </div>
+                    <div class="stat-item" onclick="showCompletedOrders()" style="cursor: pointer;">
+                        <div class="stat-value" id="completed-orders-count">0</div>
+                        <div class="stat-label">已完成</div>
+                    </div>
             </div>
             
             <div class="card">
@@ -1106,6 +1158,52 @@
             
             <h3 style="margin: 20px 0 10px;">已完成的订单</h3>
             <div class="order-list" id="completed-chat-orders">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> 加载中...
+                </div>
+            </div>
+        </div>
+
+        <!-- 我的订单页面 -->
+        <div id="my-orders-page" class="page">
+            <div class="card">
+                <button class="btn btn-secondary" onclick="showPage('main-page')" style="margin-bottom: 15px;">
+                    <i class="fas fa-arrow-left"></i> 返回首页
+                </button>
+                <h2>我的订单</h2>
+                <p>查看我发布和接取的所有订单</p>
+            </div>
+    
+            <div class="order-tabs" style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0;">
+                <button class="order-tab-btn active" onclick="switchOrderTab('all')">全部</button>
+                <button class="order-tab-btn" onclick="switchOrderTab('delivery')">代取快递</button>
+                <button class="order-tab-btn" onclick="switchOrderTab('errand')">跑腿任务</button>
+            </div>
+    
+            <div class="order-list" id="my-orders-list">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> 加载中...
+                </div>
+            </div>
+        </div>
+
+        <!-- 已完成订单页面 -->
+        <div id="completed-orders-page" class="page">
+            <div class="card">
+                <button class="btn btn-secondary" onclick="showPage('main-page')" style="margin-bottom: 15px;">
+                    <i class="fas fa-arrow-left"></i> 返回首页
+                </button>
+                <h2>已完成订单</h2>
+                <p>查看已完成的所有订单</p>
+            </div>
+    
+            <div class="order-tabs" style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0;">
+                <button class="order-tab-btn active" onclick="switchCompletedTab('all')">全部</button>
+                <button class="order-tab-btn" onclick="switchCompletedTab('delivery')">代取快递</button>
+                <button class="order-tab-btn" onclick="switchCompletedTab('errand')">跑腿任务</button>
+            </div>
+    
+            <div class="order-list" id="completed-orders-list">
                 <div class="loading">
                     <i class="fas fa-spinner fa-spin"></i> 加载中...
                 </div>
@@ -1730,13 +1828,13 @@ async function renderDeliveryOrders() {
             }
             
             // 添加未读消息提示
-            if (unreadCount > 0) {
-                orderHTML += `
-                    <div class="order-detail" style="color: #ff4757; font-weight: 500;">
-                        <i class="fas fa-comment-dots"></i> 有${unreadCount}条未读消息
-                    </div>
-                `;
-            }
+                if (unreadCount > 0) {
+            orderHTML += `
+                <div class="order-detail" style="color: #ff4757; font-weight: 500;">
+                     <i class="fas fa-comment-dots"></i> ${unreadCount}条未读消息
+                 </div>
+            `;
+        }
             
             orderHTML += `
                 </div>
@@ -1744,10 +1842,11 @@ async function renderDeliveryOrders() {
             `;
             
             // 添加聊天按钮（只有已接单状态且是相关用户）
-            if (order.status === 'taken' && (order.created_by === currentUser.id || order.taken_by === currentUser.id)) {
-                const buttonText = unreadCount > 0 ? '查看消息' : '联系对方';
-                orderHTML += `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'delivery')">
-                    <i class="fas fa-comments"></i> ${buttonText}
+                if (order.status === 'taken' && (order.created_by === currentUser.id || order.taken_by === currentUser.id)) {
+                    const badgeHTML = unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : '';
+            orderHTML += `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'delivery')" style="position: relative;">
+                    <i class="fas fa-comments"></i> 联系对方
+                    ${badgeHTML}
                 </button>`;
             }
             
@@ -1863,7 +1962,7 @@ async function renderDeliveryOrders() {
                         </div>
                         <div class="order-actions">
                             ${order.status === 'taken' && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
-                                `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'errand')">联系对方</button>` : ''}
+    `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'errand')" style="position: relative;">联系对方${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}</button>` : ''}
                             ${order.status === 'taken' && order.taken_by === currentUser.id ? 
                                 `<button class="action-btn btn-cancel" onclick="cancelTakeOrder('${order.id}', 'errand')">取消接单</button>` : ''}
                             ${order.status === 'taken' && order.created_by === currentUser.id ? 
@@ -2782,7 +2881,7 @@ function closeChat() {
                 </div>
                 <div class="order-actions">
                     ${(order.status === 'taken' || order.status === 'processing') ? 
-                        `<button class="action-btn btn-chat" onclick="openChat('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">进入聊天</button>` : ''}
+                    `<button class="action-btn btn-chat" onclick="openChat('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')" style="position: relative;">进入聊天${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}</button>` : ''}
                 </div>
             `;
             
@@ -2902,6 +3001,296 @@ function closeChat() {
             await updateTabUnreadBadge();
         }
 
+        // 显示我的订单页面
+        function showMyOrders() {
+            document.getElementById('navbar-title').textContent = '我的订单';
+            showPage('my-orders-page');
+            renderMyOrders('all');
+        }
+
+        // 显示已完成订单页面
+        function showCompletedOrders() {
+            document.getElementById('navbar-title').textContent = '已完成订单';
+            showPage('completed-orders-page');
+            renderCompletedOrders('all');
+        }
+
+        // 切换我的订单标签页
+        function switchOrderTab(tab) {
+            // 更新按钮状态
+            document.querySelectorAll('#my-orders-page .order-tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+    
+            // 渲染对应类型的订单
+           renderMyOrders(tab);
+        }
+
+        // 切换已完成订单标签页
+        function switchCompletedTab(tab) {
+            // 更新按钮状态
+            document.querySelectorAll('#completed-orders-page .order-tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+    
+            // 渲染对应类型的订单
+                    renderCompletedOrders(tab);
+        }
+
+        // 渲染我的订单
+        async function renderMyOrders(type = 'all') {
+            const ordersList = document.getElementById('my-orders-list');
+    
+            try {
+                const [deliveryOrders, errandOrders] = await Promise.all([
+                    getDeliveryOrders(),
+                    getErrandOrders()
+                ]);
+        
+                ordersList.innerHTML = '';
+        
+        // 筛选当前用户的订单
+                const myDeliveryOrders = deliveryOrders.filter(order => 
+                    order.created_by === currentUser.id || order.taken_by === currentUser.id
+                );
+        
+                const myErrandOrders = errandOrders.filter(order => 
+                    order.created_by === currentUser.id || order.taken_by === currentUser.id
+                );
+        
+                let ordersToShow = [];
+        
+                // 根据类型筛选
+                if (type === 'all') {
+                    ordersToShow = [...myDeliveryOrders, ...myErrandOrders];
+                } else if (type === 'delivery') {
+                    ordersToShow = myDeliveryOrders;
+                } else if (type === 'errand') {
+                    ordersToShow = myErrandOrders;
+                }
+        
+        // 按创建时间排序
+        ordersToShow.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        if (ordersToShow.length === 0) {
+            ordersList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>暂无订单记录</p>
+                </div>
+            `;
+            return;
+        }
+        
+        for (const order of ordersToShow) {
+            const unreadCount = await getUnreadMessageCount(order.id, order.title ? 'errand' : 'delivery');
+            const orderItem = document.createElement('div');
+            orderItem.className = 'order-item';
+            if (order.title) {
+                orderItem.classList.add('errand-item');
+            }
+            if (unreadCount > 0) {
+                orderItem.classList.add('chat-order-unread');
+            }
+            
+            let statusClass = '';
+            let statusText = '';
+            
+            switch(order.status) {
+                case 'pending':
+                    statusClass = 'status-pending';
+                    statusText = '待接单';
+                    break;
+                case 'taken':
+                    statusClass = 'status-taken';
+                    statusText = '已接单';
+                    break;
+                case 'processing':
+                    statusClass = 'status-processing';
+                    statusText = '进行中';
+                    break;
+                case 'completed':
+                    statusClass = 'status-completed';
+                    statusText = '已完成';
+                    break;
+                case 'cancelled':
+                    statusClass = 'status-cancelled';
+                    statusText = '已取消';
+                    break;
+            }
+            
+            // 判断订单类型
+            const isDelivery = !order.title;
+            const orderType = isDelivery ? '代取快递' : '跑腿任务';
+            const orderTitle = isDelivery ? '代取快递' : order.title;
+            
+            // 判断用户角色
+            const isMyOrder = order.created_by === currentUser.id;
+            const userRole = isMyOrder ? '我发布的' : '我接取的';
+            
+            orderItem.innerHTML = `
+                <div class="order-header">
+                    <div class="order-id">
+                        ${order.id.slice(-8)}
+                        <span class="order-type-tag">${orderType}</span>
+                        <span class="order-type-tag">${userRole}</span>
+                        ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}
+                    </div>
+                    <div class="order-status ${statusClass}">${statusText}</div>
+                </div>
+                <div class="order-details">
+                    <div class="order-detail"><strong>${isDelivery ? '任务' : '标题'}:</strong> ${orderTitle}</div>
+                    ${isDelivery ? `
+                        <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
+                        <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
+                    ` : `
+                        <div class="order-detail"><strong>描述:</strong> ${order.description}</div>
+                        <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
+                        <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
+                    `}
+                    <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                    <div class="order-detail"><strong>创建时间:</strong> ${new Date(order.created_at).toLocaleString()}</div>
+                    ${unreadCount > 0 ? `
+                        <div class="order-detail" style="color: #ff4757; font-weight: 500;">
+                            <i class="fas fa-comment-dots"></i> ${unreadCount}条未读消息
+                        </div>
+                    ` : ''}
+                        </div>
+                        <div class="order-actions">
+                            ${(order.status === 'taken' || order.status === 'processing') && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
+                                `<button class="action-btn btn-chat" onclick="openChat('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')" style="position: relative;">
+                                    联系对方${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}
+                                </button>` : ''}
+                        </div>
+                    `;
+            
+                    ordersList.appendChild(orderItem);
+                }
+        
+            } catch (error) {
+                ordersList.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>加载订单失败: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染已完成订单
+        async function renderCompletedOrders(type = 'all') {
+            const ordersList = document.getElementById('completed-orders-list');
+    
+            try {
+                const [deliveryOrders, errandOrders] = await Promise.all([
+            getDeliveryOrders(),
+            getErrandOrders()
+        ]);
+        
+        ordersList.innerHTML = '';
+        
+        // 筛选已完成或已取消的订单
+        const completedDeliveryOrders = deliveryOrders.filter(order => 
+            (order.created_by === currentUser.id || order.taken_by === currentUser.id) && 
+            (order.status === 'completed' || order.status === 'cancelled')
+        );
+        
+        const completedErrandOrders = errandOrders.filter(order => 
+            (order.created_by === currentUser.id || order.taken_by === currentUser.id) && 
+            (order.status === 'completed' || order.status === 'cancelled')
+        );
+        
+        let ordersToShow = [];
+        
+        // 根据类型筛选
+        if (type === 'all') {
+            ordersToShow = [...completedDeliveryOrders, ...completedErrandOrders];
+        } else if (type === 'delivery') {
+            ordersToShow = completedDeliveryOrders;
+        } else if (type === 'errand') {
+            ordersToShow = completedErrandOrders;
+        }
+        
+        // 按完成时间排序（假设完成时间就是更新时间）
+        ordersToShow.sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at));
+        
+        if (ordersToShow.length === 0) {
+            ordersList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <p>暂无已完成订单</p>
+                </div>
+            `;
+            return;
+        }
+        
+        for (const order of ordersToShow) {
+            const unreadCount = await getUnreadMessageCount(order.id, order.title ? 'errand' : 'delivery');
+            const orderItem = document.createElement('div');
+            orderItem.className = 'order-item';
+            if (order.title) {
+                orderItem.classList.add('errand-item');
+            }
+            
+            let statusClass = '';
+            let statusText = '';
+            
+            if (order.status === 'completed') {
+                statusClass = 'status-completed';
+                statusText = '已完成';
+            } else if (order.status === 'cancelled') {
+                statusClass = 'status-cancelled';
+                statusText = '已取消';
+            }
+            
+            // 判断订单类型
+            const isDelivery = !order.title;
+            const orderType = isDelivery ? '代取快递' : '跑腿任务';
+            const orderTitle = isDelivery ? '代取快递' : order.title;
+            
+            // 判断用户角色
+            const isMyOrder = order.created_by === currentUser.id;
+            const userRole = isMyOrder ? '我发布的' : '我接取的';
+            
+            orderItem.innerHTML = `
+                <div class="order-header">
+                    <div class="order-id">
+                        ${order.id.slice(-8)}
+                        <span class="order-type-tag">${orderType}</span>
+                        <span class="order-type-tag">${userRole}</span>
+                    </div>
+                    <div class="order-status ${statusClass}">${statusText}</div>
+                </div>
+                <div class="order-details">
+                    <div class="order-detail"><strong>${isDelivery ? '任务' : '标题'}:</strong> ${orderTitle}</div>
+                    ${isDelivery ? `
+                        <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
+                        <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
+                    ` : `
+                        <div class="order-detail"><strong>描述:</strong> ${order.description}</div>
+                        <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
+                        <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
+                    `}
+                    <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                    <div class="order-detail"><strong>${order.status === 'completed' ? '完成时间' : '取消时间'}:</strong> ${new Date(order.updated_at || order.created_at).toLocaleString()}</div>
+                </div>
+            `;
+            
+            ordersList.appendChild(orderItem);
+        }
+        
+    } catch (error) {
+        ordersList.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>加载已完成订单失败: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+        
         // 启动应用
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
