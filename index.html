@@ -923,6 +923,22 @@
                 </div>
                 
                 <div class="form-group">
+                    <label for="item-type" class="form-label required">物品类型</label>
+                    <select id="item-type" class="form-input" required>
+                        <option value="">请选择物品类型</option>
+                        <option value="日用品">日用品</option>
+                        <option value="化妆品">化妆品</option>
+                        <option value="床上用品">床上用品</option>
+                        <option value="运动器械">运动器械</option>
+                        <option value="其它">其它</option>
+                    </select>
+                </div>
+                
+                <div id="other-item-container" style="display: none;">
+                    <!-- 当选择"其它"时，这里会动态添加一个输入框 -->
+                </div>
+                
+                <div class="form-group">
                     <label for="pickup-code" class="form-label required">取件码</label>
                     <input type="text" id="pickup-code" class="form-input" placeholder="请输入快递取件码" required>
                 </div>
@@ -1542,6 +1558,33 @@
         function getSelectedContactType(containerId) {
             const selector = document.querySelector(`#${containerId} .contact-type-btn.active`);
             return selector ? selector.dataset.type : 'wechat';
+        }
+
+        // 处理物品类型变化
+        function handleItemTypeChange() {
+            const itemTypeSelect = document.getElementById('item-type');
+            const otherContainer = document.getElementById('other-item-container');
+            
+            if (itemTypeSelect.value === '其它') {
+                // 如果已经存在输入框，就不重复添加
+                if (!otherContainer.querySelector('input')) {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.id = 'other-item-name';
+                    input.className = 'form-input';
+                    input.placeholder = '请输入具体物品名称';
+                    input.required = true;
+                    otherContainer.appendChild(input);
+                }
+                otherContainer.style.display = 'block';
+            } else {
+                otherContainer.style.display = 'none';
+                // 移除输入框，避免提交时获取到值
+                const input = otherContainer.querySelector('input');
+                if (input) {
+                    input.remove();
+                }
+            }
         }
 
         // 进入代取快递服务
@@ -2267,6 +2310,7 @@ async function renderDeliveryOrders() {
             const deliveryTime = document.getElementById('delivery-time').value;
             const pickupAddress = document.getElementById('pickup-address').value;
             const deliveryAddress = document.getElementById('delivery-address').value;
+            const itemType = document.getElementById('item-type').value;
             const pickupCode = document.getElementById('pickup-code').value;
             const contactName = document.getElementById('contact-name').value;
             const contactInfo = document.getElementById('contact-info').value;
@@ -2275,14 +2319,25 @@ async function renderDeliveryOrders() {
             const notes = document.getElementById('notes').value;
             
             console.log('开始提交订单，表单数据:', {
-                deliveryTime, pickupAddress, deliveryAddress, pickupCode,
+                deliveryTime, pickupAddress, deliveryAddress, itemType, pickupCode,
                 contactName, contactInfo, contactType, reward, notes
             });
             
             if (!deliveryTime || !pickupAddress || !deliveryAddress || 
-                !pickupCode || !contactName || !contactInfo) {
+                !itemType || !pickupCode || !contactName || !contactInfo) {
                 alert('请填写所有必填字段！');
                 return;
+            }
+            
+            // 验证物品类型
+            let finalItemType = itemType;
+            if (itemType === '其它') {
+                const otherItemInput = document.getElementById('other-item-name');
+                if (!otherItemInput || !otherItemInput.value.trim()) {
+                    alert('请填写具体物品名称！');
+                    return;
+                }
+                finalItemType = otherItemInput.value.trim();
             }
             
             try {
@@ -2290,6 +2345,7 @@ async function renderDeliveryOrders() {
                     deliveryTime: deliveryTime,
                     pickupAddress: pickupAddress,
                     deliveryAddress: deliveryAddress,
+                    itemType: finalItemType,
                     pickupCode: pickupCode,
                     contactName: contactName,
                     contactInfo: contactInfo,
@@ -2308,11 +2364,20 @@ async function renderDeliveryOrders() {
                 // 重置表单
                 document.getElementById('pickup-address').value = '';
                 document.getElementById('delivery-address').value = '';
+                document.getElementById('item-type').value = '';
                 document.getElementById('pickup-code').value = '';
                 document.getElementById('contact-name').value = '';
                 document.getElementById('contact-info').value = '';
                 document.getElementById('reward').value = '5';
                 document.getElementById('notes').value = '';
+                
+                // 隐藏并清空其它物品名称输入框
+                const otherContainer = document.getElementById('other-item-container');
+                otherContainer.style.display = 'none';
+                const otherInput = otherContainer.querySelector('input');
+                if (otherInput) {
+                    otherInput.remove();
+                }
                 
                 alert('代取请求已提交成功！');
                 showPage('delivery-home-page');
@@ -2721,6 +2786,12 @@ function closeChat() {
                 document.getElementById('available-errands').style.display = 'block';
                 renderAvailableErrands();
             });
+            
+            // 物品类型变化监听
+            const itemTypeSelect = document.getElementById('item-type');
+            if (itemTypeSelect) {
+                itemTypeSelect.addEventListener('change', handleItemTypeChange);
+            }
         }
 
         // 编辑用户名
