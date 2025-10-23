@@ -771,6 +771,60 @@
             background-color: #f5f5f5;
         }
 
+        /* 移动端优化样式 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .card {
+                padding: 12px;
+            }
+            
+            .btn {
+                padding: 16px 20px;
+            }
+            
+            .service-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-input, .form-textarea {
+                padding: 14px 15px;
+                font-size: 16px; /* 确保移动端字体大小合适 */
+            }
+            
+            /* 移动端日期时间输入框优化 */
+            input[type="datetime-local"] {
+                height: 48px; /* 与普通输入框高度一致 */
+                font-size: 16px; /* 防止iOS缩放 */
+                -webkit-appearance: none; /* 移除iOS默认样式 */
+                border-radius: 8px; /* 统一圆角 */
+            }
+            
+            /* 移动端下拉选择框优化 */
+            select {
+                height: 48px; /* 与普通输入框高度一致 */
+                font-size: 16px; /* 防止iOS缩放 */
+                -webkit-appearance: none; /* 移除iOS默认样式 */
+                -moz-appearance: none; /* 移除Firefox默认样式 */
+                appearance: none; /* 移除默认样式 */
+                border-radius: 8px; /* 统一圆角 */
+                background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+                background-repeat: no-repeat;
+                background-position: right 15px center;
+                background-size: 16px;
+                padding-right: 45px; /* 为下拉箭头留出空间 */
+            }
+            
+            /* 确保其他物品名称输入框样式一致 */
+            #other-item-name {
+                padding: 14px 15px;
+                font-size: 16px;
+                height: 48px;
+            }
+        }
+        
         /* 响应式设计 */
         @media (max-width: 768px) {
             .container {
@@ -2460,35 +2514,110 @@ async function renderDeliveryOrders() {
             }
         }
 
-        // 获取未读消息数量
-        async function getUnreadMessageCount(orderId, orderType) {
-            try {
-                // 从本地存储获取最后阅读时间
-                const lastReadKey = `last_read_${orderType}_${orderId}`;
-                const lastReadTime = localStorage.getItem(lastReadKey) || 0;
+        // 获取未读消息数量 - 修复版本
+async function getUnreadMessageCount(orderId, orderType) {
+    try {
+        // 从本地存储获取最后阅读时间
+        const lastReadKey = `last_read_${orderType}_${orderId}`;
+        const lastReadTime = localStorage.getItem(lastReadKey) || '1970-01-01T00:00:00Z';
 
-                const { data, error } = await supabase
-                    .from('chat_messages')
-                    .select('*')
-                    .eq('order_id', orderId)
-                    .eq('order_type', orderType)
-                    .gt('created_at', lastReadTime)
-                    .neq('sender_id', currentUser.id);
+        console.log('查询未读消息:', {
+            orderId,
+            orderType,
+            lastReadTime,
+            currentUserId: currentUser.id
+        });
 
-                if (error) throw error;
-                return data ? data.length : 0;
-            } catch (error) {
-                console.error('获取未读消息数量失败:', error);
-                return 0;
-            }
+        // 构建查询条件
+        let query = supabase
+            .from('chat_messages')
+            .select('*')
+            .eq('order_id', orderId)
+            .eq('order_type', orderType)
+            .gt('created_at', lastReadTime);
+
+        // 只查询其他用户发送的消息
+        if (currentUser && currentUser.id) {
+            query = query.neq('sender_id', currentUser.id);
         }
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error('Supabase查询错误详情:', error);
+            throw error;
+        }
+
+        console.log(`找到 ${data ? data.length : 0} 条未读消息`);
+        return data ? data.length : 0;
+    } catch (error) {
+        console.error('获取未读消息数量失败:', error);
+        return 0;
+    }
+}
+
+// 更新最后阅读时间
+function updateLastReadTime(orderId, orderType) {
+    const lastReadKey = `last_read_${orderType}_${orderId}`;
+    localStorage.setItem(lastReadKey, new Date().toISOString());
+    console.log('更新最后阅读时间:', lastReadKey, new Date().toISOString());
+}
+
+// 更新底部导航的未读消息徽章
+async function updateTabUnreadBadge() {
+    try {
+        // 获取所有相关订单
+        const [deliveryOrders, errandOrders] = await Promise.all([
+            getDeliveryOrders(),
+            getErrandOrders()
+        ]);
+        
+        const myDeliveryOrders = deliveryOrders.filter(order => 
+            order.created_by === currentUser.id || order.taken_by === currentUser.id
+        );
+        
+        const myErrandOrders = errandOrders.filter(order => 
+            order.created_by === currentUser.id || order.taken_by === currentUser.id
+        );
+        
+        const allOrders = [...myDeliveryOrders, ...myErrandOrders];
+        
+        // 计算总未读消息数
+        let totalUnread = 0;
+        
+        for (const order of allOrders) {
+            const orderType = order.title ? 'errand' : 'delivery';
+            const unreadCount = await getUnreadMessageCount(order.id, orderType);
+            totalUnread += unreadCount;
+        }
+        
+        const chatTab = document.querySelector('.tab-item:nth-child(4)'); // 聊天标签
+        
+        // 移除现有的徽章
+        const existingBadge = chatTab.querySelector('.unread-badge');
+        if (existingBadge) {
+            existingBadge.remove();
+        }
+        
+        // 如果有未读消息，添加徽章
+        if (totalUnread > 0) {
+            const badge = document.createElement('span');
+            badge.className = 'unread-badge';
+            badge.textContent = totalUnread > 99 ? '99+' : totalUnread.toString();
+            chatTab.appendChild(badge);
+        }
+        
+    } catch (error) {
+        console.error('更新底部导航徽章失败:', error);
+    }
+}
 
         // 更新最后阅读时间
-        function updateLastReadTime(orderId, orderType) {
-            const lastReadKey = `last_read_${orderType}_${orderId}`;
-            localStorage.setItem(lastReadKey, new Date().toISOString());
-        }
-
+function updateLastReadTime(orderId, orderType) {
+    const lastReadKey = `last_read_${orderType}_${orderId}`;
+    localStorage.setItem(lastReadKey, new Date().toISOString());
+    console.log('更新最后阅读时间:', lastReadKey, new Date().toISOString());
+}
         // 更新底部导航的未读消息徽章
         async function updateTabUnreadBadge() {
             try {
