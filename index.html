@@ -361,6 +361,13 @@
             background-color: white;
             box-shadow: 0 0 0 2px rgba(77, 166, 255, 0.2);
         }
+
+        /* 确保下拉框和日期输入框与其他输入框样式一致 */
+select.form-input,
+input[type="datetime-local"].form-input {
+    height: auto; /* 确保高度与其他输入框一致 */
+    line-height: normal; /* 重置行高 */
+}
         
         /* 订单项样式 */
         .order-item {
@@ -794,28 +801,31 @@
                 font-size: 16px; /* 确保移动端字体大小合适 */
             }
             
-            /* 移动端日期时间输入框优化 */
-            input[type="datetime-local"] {
-                height: 48px; /* 与普通输入框高度一致 */
-                font-size: 16px; /* 防止iOS缩放 */
-                -webkit-appearance: none; /* 移除iOS默认样式 */
-                border-radius: 8px; /* 统一圆角 */
-            }
-            
-            /* 移动端下拉选择框优化 */
-            select {
-                height: 48px; /* 与普通输入框高度一致 */
-                font-size: 16px; /* 防止iOS缩放 */
-                -webkit-appearance: none; /* 移除iOS默认样式 */
-                -moz-appearance: none; /* 移除Firefox默认样式 */
-                appearance: none; /* 移除默认样式 */
-                border-radius: 8px; /* 统一圆角 */
-                background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-                background-repeat: no-repeat;
-                background-position: right 15px center;
-                background-size: 16px;
-                padding-right: 45px; /* 为下拉箭头留出空间 */
-            }
+            /* 移动端日期时间输入框优化 - 更新为与其他输入框一致 */
+input[type="datetime-local"] {
+    height: auto; /* 使用自动高度 */
+    padding: 14px 15px; /* 与其他输入框一致的padding */
+    font-size: 16px; /* 防止iOS缩放 */
+    -webkit-appearance: none; /* 移除iOS默认样式 */
+    border-radius: 8px; /* 统一圆角 */
+    line-height: normal; /* 重置行高 */
+}
+            /* 移动端下拉选择框优化 - 更新为与其他输入框一致 */
+select {
+    height: auto; /* 使用自动高度 */
+    padding: 14px 15px; /* 与其他输入框一致的padding */
+    padding-right: 45px; /* 为下拉箭头留出空间 */
+    font-size: 16px; /* 防止iOS缩放 */
+    -webkit-appearance: none; /* 移除iOS默认样式 */
+    -moz-appearance: none; /* 移除Firefox默认样式 */
+    appearance: none; /* 移除默认样式 */
+    border-radius: 8px; /* 统一圆角 */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 16px;
+    line-height: normal; /* 重置行高 */
+}
             
             /* 确保其他物品名称输入框样式一致 */
             #other-item-name {
