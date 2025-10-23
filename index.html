@@ -377,6 +377,7 @@ input[type="datetime-local"].form-input {
             margin-bottom: 15px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             border-left: 4px solid #4da6ff;
+            cursor: pointer;
         }
         
         .order-item.errand-item {
@@ -415,6 +416,11 @@ input[type="datetime-local"].form-input {
         .status-processing {
             background-color: #d1ecf1;
             color: #0c5460;
+        }
+        
+        .status-delivered {
+            background-color: #fff3cd;
+            color: #856404;
         }
         
         .status-completed {
@@ -487,6 +493,33 @@ input[type="datetime-local"].form-input {
         
         .btn-cancel:active {
             background-color: #e0a800;
+        }
+        
+        .btn-delivered {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-delivered:active {
+            background-color: #218838;
+        }
+        
+        .btn-confirm {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .btn-confirm:active {
+            background-color: #138496;
+        }
+        
+        .btn-rate {
+            background-color: #6f42c1;
+            color: white;
+        }
+        
+        .btn-rate:active {
+            background-color: #5a359c;
         }
         
         /* 设置页面样式优化 */
@@ -776,6 +809,116 @@ input[type="datetime-local"].form-input {
 
         .order-tab-btn:hover {
             background-color: #f5f5f5;
+        }
+
+        /* 新增：评价模态框样式 */
+        .rating-stars {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+            font-size: 24px;
+            color: #ffc107;
+        }
+
+        .rating-star {
+            cursor: pointer;
+            margin: 0 5px;
+            transition: all 0.2s;
+        }
+
+        .rating-star:hover {
+            transform: scale(1.2);
+        }
+
+        .rating-star.active {
+            color: #ffc107;
+        }
+
+        /* 订单详情模态框样式 */
+        .order-detail-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .order-detail-content {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80%;
+            border-radius: 12px;
+            overflow-y: auto;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .order-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .order-detail-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .order-detail-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .order-detail-section {
+            margin-bottom: 15px;
+        }
+
+        .order-detail-section h4 {
+            margin-bottom: 8px;
+            color: #4da6ff;
+            font-size: 16px;
+        }
+
+        .order-detail-info {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .order-detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .order-detail-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .order-detail-label {
+            font-weight: 500;
+            color: #555;
+        }
+
+        .order-detail-value {
+            color: #333;
+            text-align: right;
         }
 
         /* 移动端优化样式 */
@@ -1400,6 +1543,7 @@ select {
         let currentChatOrder = null;
         let chatInterval = null;
         let unreadUpdateInterval = null;
+        let notificationPermission = false;
 
         // 生成设备唯一标识
         function generateDeviceId() {
@@ -1884,6 +2028,10 @@ async function renderDeliveryOrders() {
                     statusClass = 'status-processing';
                     statusText = '配送中';
                     break;
+                case 'delivered':
+                    statusClass = 'status-delivered';
+                    statusText = '已送达';
+                    break;
                 case 'completed':
                     statusClass = 'status-completed';
                     statusText = '已完成';
@@ -1957,6 +2105,24 @@ async function renderDeliveryOrders() {
                 </button>`;
             }
             
+            // 添加送达按钮（只有接单人且状态为processing）
+            if (order.status === 'processing' && order.taken_by === currentUser.id) {
+                orderHTML += `<button class="action-btn btn-delivered" onclick="markAsDelivered('${order.id}', 'delivery')">已送达</button>`;
+            }
+            
+            // 添加确认完成按钮（只有发布人且状态为delivered）
+            if (order.status === 'delivered' && order.created_by === currentUser.id) {
+                orderHTML += `<button class="action-btn btn-confirm" onclick="confirmCompletion('${order.id}', 'delivery')">确认完成</button>`;
+            }
+            
+            // 添加评价按钮（只有已完成且未评价）
+            if (order.status === 'completed') {
+                const hasRated = await checkIfRated(order.id, 'delivery');
+                if (!hasRated) {
+                    orderHTML += `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', 'delivery')">评价</button>`;
+                }
+            }
+            
             // 添加取消接单按钮（只有接单人可以取消）
             if (order.status === 'taken' && order.taken_by === currentUser.id) {
                 orderHTML += `<button class="action-btn btn-cancel" onclick="cancelTakeOrder('${order.id}', 'delivery')">取消接单</button>`;
@@ -1967,11 +2133,20 @@ async function renderDeliveryOrders() {
                 orderHTML += `<button class="action-btn btn-cancel" onclick="cancelOrder('${order.id}', 'delivery')">取消订单</button>`;
             }
             
+            // 添加查看详情按钮
+            orderHTML += `<button class="action-btn btn-secondary" onclick="viewOrderDetails('${order.id}', 'delivery')">查看详情</button>`;
+            
             orderHTML += `
                 </div>
             `;
             
             orderItem.innerHTML = orderHTML;
+            orderItem.onclick = function(e) {
+                // 防止按钮点击触发详情查看
+                if (!e.target.classList.contains('action-btn')) {
+                    viewOrderDetails(order.id, 'delivery');
+                }
+            };
             ordersList.appendChild(orderItem);
         }
         
@@ -2035,6 +2210,10 @@ async function renderDeliveryOrders() {
                             statusClass = 'status-processing';
                             statusText = '进行中';
                             break;
+                        case 'delivered':
+                            statusClass = 'status-delivered';
+                            statusText = '已送达';
+                            break;
                         case 'completed':
                             statusClass = 'status-completed';
                             statusText = '已完成';
@@ -2070,15 +2249,30 @@ async function renderDeliveryOrders() {
                         <div class="order-actions">
                             ${order.status === 'taken' && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
     `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'errand')" style="position: relative;">联系对方${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}</button>` : ''}
+                            ${order.status === 'processing' && order.taken_by === currentUser.id ? 
+                                `<button class="action-btn btn-delivered" onclick="markAsDelivered('${order.id}', 'errand')">已送达</button>` : ''}
+                            ${order.status === 'delivered' && order.created_by === currentUser.id ? 
+                                `<button class="action-btn btn-confirm" onclick="confirmCompletion('${order.id}', 'errand')">确认完成</button>` : ''}
+                            ${order.status === 'completed' ? 
+                                (async () => {
+                                    const hasRated = await checkIfRated(order.id, 'errand');
+                                    return !hasRated ? `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', 'errand')">评价</button>` : '';
+                                })() : ''}
                             ${order.status === 'taken' && order.taken_by === currentUser.id ? 
                                 `<button class="action-btn btn-cancel" onclick="cancelTakeOrder('${order.id}', 'errand')">取消接单</button>` : ''}
                             ${order.status === 'taken' && order.created_by === currentUser.id ? 
                                 `<button class="action-btn btn-cancel" onclick="cancelOrder('${order.id}', 'errand')">取消订单</button>` : ''}
                             ${order.status === 'pending' && order.created_by === currentUser.id ? 
                                 `<button class="action-btn btn-cancel" onclick="cancelOrder('${order.id}', 'errand')">取消订单</button>` : ''}
+                            <button class="action-btn btn-secondary" onclick="viewOrderDetails('${order.id}', 'errand')">查看详情</button>
                         </div>
                     `;
                     
+                    orderItem.onclick = function(e) {
+                        if (!e.target.classList.contains('action-btn')) {
+                            viewOrderDetails(order.id, 'errand');
+                        }
+                    };
                     ordersList.appendChild(orderItem);
                 }
                 
@@ -2157,8 +2351,15 @@ async function renderDeliveryOrders() {
                         </div>
                         <div class="order-actions">
                             <button class="action-btn btn-take" data-id="${order.id}">接单</button>
+                            <button class="action-btn btn-secondary" onclick="viewOrderDetails('${order.id}', 'delivery')">查看详情</button>
                         </div>
                     `;
+                    
+                    orderItem.onclick = function(e) {
+                        if (!e.target.classList.contains('action-btn')) {
+                            viewOrderDetails(order.id, 'delivery');
+                        }
+                    };
                     
                     ordersList.appendChild(orderItem);
                 });
@@ -2220,8 +2421,15 @@ async function renderDeliveryOrders() {
                         </div>
                         <div class="order-actions">
                             <button class="action-btn btn-take-errand" data-id="${order.id}">接单</button>
+                            <button class="action-btn btn-secondary" onclick="viewOrderDetails('${order.id}', 'errand')">查看详情</button>
                         </div>
                     `;
+                    
+                    orderItem.onclick = function(e) {
+                        if (!e.target.classList.contains('action-btn')) {
+                            viewOrderDetails(order.id, 'errand');
+                        }
+                    };
                     
                     errandsList.appendChild(orderItem);
                 });
@@ -2264,6 +2472,12 @@ async function renderDeliveryOrders() {
                 renderAvailableOrders();
                 renderDeliveryOrders();
                 
+                // 发送通知给发布者
+                const order = (await getDeliveryOrders()).find(o => o.id === orderId);
+                if (order) {
+                    sendNotification('您的订单已被接单', `订单 ${orderId.slice(-8)} 已被 ${currentUser.name} 接单`);
+                }
+                
                 // 添加这行代码 - 自动刷新所有页面数据
                 await refreshAllPages();
                 
@@ -2292,6 +2506,12 @@ async function renderDeliveryOrders() {
                 alert('接单成功！请尽快联系发布人确认细节。');
                 renderAvailableErrands();
                 renderErrandOrders();
+
+                // 发送通知给发布者
+                const order = (await getErrandOrders()).find(o => o.id === orderId);
+                if (order) {
+                    sendNotification('您的任务已被接单', `任务 ${orderId.slice(-8)} 已被 ${currentUser.name} 接单`);
+                }
 
                 await refreshAllPages();
 
@@ -2365,6 +2585,88 @@ async function renderDeliveryOrders() {
 
             } catch (error) {
                 alert('取消订单失败，请重试！');
+                console.error(error);
+            }
+        }
+
+        // 标记为已送达
+        async function markAsDelivered(orderId, orderType) {
+            if (!confirm('确定已送达吗？')) return;
+            
+            try {
+                if (orderType === 'delivery') {
+                    await updateOrder(orderId, {
+                        status: 'delivered'
+                    });
+                } else {
+                    await updateErrandOrder(orderId, {
+                        status: 'delivered'
+                    });
+                }
+                
+                alert('已标记为送达！等待发布者确认完成。');
+                if (orderType === 'delivery') {
+                    renderDeliveryOrders();
+                } else {
+                    renderErrandOrders();
+                }
+                
+                // 发送通知给发布者
+                let order;
+                if (orderType === 'delivery') {
+                    order = (await getDeliveryOrders()).find(o => o.id === orderId);
+                } else {
+                    order = (await getErrandOrders()).find(o => o.id === orderId);
+                }
+                if (order) {
+                    sendNotification('订单已送达', `订单 ${orderId.slice(-8)} 已送达，请确认完成`);
+                }
+
+                await refreshAllPages();
+
+            } catch (error) {
+                alert('操作失败，请重试！');
+                console.error(error);
+            }
+        }
+
+        // 确认完成
+        async function confirmCompletion(orderId, orderType) {
+            if (!confirm('确认订单已完成吗？')) return;
+            
+            try {
+                if (orderType === 'delivery') {
+                    await updateOrder(orderId, {
+                        status: 'completed'
+                    });
+                } else {
+                    await updateErrandOrder(orderId, {
+                        status: 'completed'
+                    });
+                }
+                
+                alert('订单已完成！');
+                if (orderType === 'delivery') {
+                    renderDeliveryOrders();
+                } else {
+                    renderErrandOrders();
+                }
+                
+                // 发送通知给接单人
+                let order;
+                if (orderType === 'delivery') {
+                    order = (await getDeliveryOrders()).find(o => o.id === orderId);
+                } else {
+                    order = (await getErrandOrders()).find(o => o.id === orderId);
+                }
+                if (order && order.taken_by) {
+                    sendNotification('订单已完成', `订单 ${orderId.slice(-8)} 已被发布者确认完成`);
+                }
+
+                await refreshAllPages();
+
+            } catch (error) {
+                alert('操作失败，请重试！');
                 console.error(error);
             }
         }
@@ -2974,7 +3276,7 @@ function closeChat() {
                 
                 // 分离进行中和已完成的订单
                 const activeOrders = allOrders.filter(order => 
-                    order.status === 'taken' || order.status === 'processing'
+                    order.status === 'taken' || order.status === 'processing' || order.status === 'delivered'
                 );
                 
                 const completedOrders = allOrders.filter(order => 
@@ -3054,6 +3356,10 @@ function closeChat() {
                     statusClass = 'status-processing';
                     statusText = '进行中';
                     break;
+                case 'delivered':
+                    statusClass = 'status-delivered';
+                    statusText = '已送达';
+                    break;
                 case 'completed':
                     statusClass = 'status-completed';
                     statusText = '已完成';
@@ -3090,7 +3396,7 @@ function closeChat() {
                     <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
                 </div>
                 <div class="order-actions">
-                    ${(order.status === 'taken' || order.status === 'processing') ? 
+                    ${(order.status === 'taken' || order.status === 'processing' || order.status === 'delivered') ? 
                     `<button class="action-btn btn-chat" onclick="openChat('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')" style="position: relative;">进入聊天${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}</button>` : ''}
                 </div>
             `;
@@ -3195,6 +3501,9 @@ function closeChat() {
             // 初始化事件监听器
             initEventListeners();
             
+            // 请求通知权限
+            requestNotificationPermission();
+            
             // 初始加载首页统计
             try {
                 await updateMainPageStats();
@@ -3205,7 +3514,7 @@ function closeChat() {
             
             // 启动定时器定期更新未读消息徽章
             if (unreadUpdateInterval) clearInterval(unreadUpdateInterval);
-            unreadUpdateInterval = setInterval(updateTabUnreadBadge, 1000); // 每10秒更新一次
+            unreadUpdateInterval = setInterval(updateTabUnreadBadge, 10000); // 每10秒更新一次
             
             // 初始化未读徽章
             await updateTabUnreadBadge();
@@ -3321,6 +3630,10 @@ function closeChat() {
                     statusClass = 'status-processing';
                     statusText = '进行中';
                     break;
+                case 'delivered':
+                    statusClass = 'status-delivered';
+                    statusText = '已送达';
+                    break;
                 case 'completed':
                     statusClass = 'status-completed';
                     statusText = '已完成';
@@ -3369,10 +3682,19 @@ function closeChat() {
                     ` : ''}
                         </div>
                         <div class="order-actions">
-                            ${(order.status === 'taken' || order.status === 'processing') && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
+                            ${(order.status === 'taken' || order.status === 'processing' || order.status === 'delivered') && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
                                 `<button class="action-btn btn-chat" onclick="openChat('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')" style="position: relative;">
                                     联系对方${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}
                                 </button>` : ''}
+                            ${order.status === 'processing' && order.taken_by === currentUser.id ? 
+                                `<button class="action-btn btn-delivered" onclick="markAsDelivered('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">已送达</button>` : ''}
+                            ${order.status === 'delivered' && order.created_by === currentUser.id ? 
+                                `<button class="action-btn btn-confirm" onclick="confirmCompletion('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">确认完成</button>` : ''}
+                            ${order.status === 'completed' ? 
+                                (async () => {
+                                    const hasRated = await checkIfRated(order.id, isDelivery ? 'delivery' : 'errand');
+                                    return !hasRated ? `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">评价</button>` : '';
+                                })() : ''}
                         </div>
                     `;
             
@@ -3486,6 +3808,14 @@ function closeChat() {
                     <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
                     <div class="order-detail"><strong>${order.status === 'completed' ? '完成时间' : '取消时间'}:</strong> ${new Date(order.updated_at || order.created_at).toLocaleString()}</div>
                 </div>
+                <div class="order-actions">
+                    ${order.status === 'completed' ? 
+                        (async () => {
+                            const hasRated = await checkIfRated(order.id, isDelivery ? 'delivery' : 'errand');
+                            return !hasRated ? `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">评价</button>` : '';
+                        })() : ''}
+                    <button class="action-btn btn-secondary" onclick="viewOrderDetails('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">查看详情</button>
+                </div>
             `;
             
             ordersList.appendChild(orderItem);
@@ -3500,8 +3830,409 @@ function closeChat() {
         `;
     }
 }
+
+        // 新增功能：评价系统
+        async function rateOrder(orderId, orderType) {
+            // 创建评价模态框
+            const ratingModal = document.createElement('div');
+            ratingModal.id = 'rating-modal';
+            ratingModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
+            
+            ratingModal.innerHTML = `
+                <div style="background: white; width: 90%; max-width: 400px; border-radius: 10px; padding: 20px;">
+                    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0;">评价订单</h3>
+                        <button onclick="closeRatingModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">×</button>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <div style="margin-bottom: 10px; font-weight: 500;">请评分：</div>
+                        <div class="rating-stars">
+                            <span class="rating-star" data-rating="1">★</span>
+                            <span class="rating-star" data-rating="2">★</span>
+                            <span class="rating-star" data-rating="3">★</span>
+                            <span class="rating-star" data-rating="4">★</span>
+                            <span class="rating-star" data-rating="5">★</span>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">评价内容：</label>
+                        <textarea id="rating-comment" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; min-height: 80px;" placeholder="请输入评价内容（可选）"></textarea>
+                    </div>
+                    <button onclick="submitRating('${orderId}', '${orderType}')" style="width: 100%; padding: 12px; background: #4da6ff; color: white; border: none; border-radius: 5px; cursor: pointer;">提交评价</button>
+                </div>
+            `;
+            
+            document.body.appendChild(ratingModal);
+            
+            // 初始化星级评分
+            const stars = ratingModal.querySelectorAll('.rating-star');
+            let selectedRating = 0;
+            
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const rating = parseInt(this.dataset.rating);
+                    selectedRating = rating;
+                    
+                    stars.forEach(s => {
+                        if (parseInt(s.dataset.rating) <= rating) {
+                            s.classList.add('active');
+                        } else {
+                            s.classList.remove('active');
+                        }
+                    });
+                });
+            });
+        }
         
-        // 启动应用
+        function closeRatingModal() {
+            const ratingModal = document.getElementById('rating-modal');
+            if (ratingModal) {
+                ratingModal.remove();
+            }
+        }
+        
+        async function submitRating(orderId, orderType) {
+            const ratingModal = document.getElementById('rating-modal');
+            const stars = ratingModal.querySelectorAll('.rating-star');
+            const comment = document.getElementById('rating-comment').value;
+            
+            let selectedRating = 0;
+            stars.forEach(star => {
+                if (star.classList.contains('active')) {
+                    selectedRating = parseInt(star.dataset.rating);
+                }
+            });
+            
+            if (selectedRating === 0) {
+                alert('请选择评分！');
+                return;
+            }
+            
+            try {
+                // 获取订单信息
+                let order;
+                if (orderType === 'delivery') {
+                    order = (await getDeliveryOrders()).find(o => o.id === orderId);
+                } else {
+                    order = (await getErrandOrders()).find(o => o.id === orderId);
+                }
+                
+                if (!order) {
+                    throw new Error('订单不存在');
+                }
+                
+                // 判断用户角色
+                const isPublisher = order.created_by === currentUser.id;
+                const ratedUserId = isPublisher ? order.taken_by : order.created_by;
+                const ratedUserName = isPublisher ? order.taker_name : order.contact_name;
+                
+                // 保存评价
+                const { error } = await supabase
+                    .from('ratings')
+                    .insert([{
+                        order_id: orderId,
+                        order_type: orderType,
+                        rater_id: currentUser.id,
+                        rater_name: currentUser.name,
+                        rated_user_id: ratedUserId,
+                        rated_user_name: ratedUserName,
+                        rating: selectedRating,
+                        comment: comment,
+                        role: isPublisher ? 'publisher' : 'taker'
+                    }]);
+                
+                if (error) throw error;
+                
+                alert('评价提交成功！');
+                closeRatingModal();
+                
+                // 刷新页面
+                if (document.getElementById('delivery-home-page').classList.contains('active')) {
+                    renderDeliveryOrders();
+                } else if (document.getElementById('errand-home-page').classList.contains('active')) {
+                    renderErrandOrders();
+                } else if (document.getElementById('my-orders-page').classList.contains('active')) {
+                    renderMyOrders('all');
+                } else if (document.getElementById('completed-orders-page').classList.contains('active')) {
+                    renderCompletedOrders('all');
+                }
+                
+            } catch (error) {
+                console.error('提交评价失败:', error);
+                alert('评价提交失败，请重试！');
+            }
+        }
+        
+        async function checkIfRated(orderId, orderType) {
+            try {
+                const { data, error } = await supabase
+                    .from('ratings')
+                    .select('id')
+                    .eq('order_id', orderId)
+                    .eq('order_type', orderType)
+                    .eq('rater_id', currentUser.id)
+                    .single();
+                
+                if (error && error.code !== 'PGRST116') { // PGRST116 表示没有找到记录
+                    throw error;
+                }
+                
+                return !!data;
+            } catch (error) {
+                console.error('检查评价状态失败:', error);
+                return false;
+            }
+        }
+
+        // 新增功能：订单详情页
+        async function viewOrderDetails(orderId, orderType) {
+            try {
+                let order;
+                if (orderType === 'delivery') {
+                    const orders = await getDeliveryOrders();
+                    order = orders.find(o => o.id === orderId);
+                } else {
+                    const orders = await getErrandOrders();
+                    order = orders.find(o => o.id === orderId);
+                }
+                
+                if (!order) {
+                    alert('订单不存在！');
+                    return;
+                }
+                
+                // 创建详情模态框
+                const detailModal = document.createElement('div');
+                detailModal.className = 'order-detail-modal';
+                
+                let statusClass = '';
+                let statusText = '';
+                
+                switch(order.status) {
+                    case 'pending':
+                        statusClass = 'status-pending';
+                        statusText = '待接单';
+                        break;
+                    case 'taken':
+                        statusClass = 'status-taken';
+                        statusText = '已接单';
+                        break;
+                    case 'processing':
+                        statusClass = 'status-processing';
+                        statusText = '进行中';
+                        break;
+                    case 'delivered':
+                        statusClass = 'status-delivered';
+                        statusText = '已送达';
+                        break;
+                    case 'completed':
+                        statusClass = 'status-completed';
+                        statusText = '已完成';
+                        break;
+                    case 'cancelled':
+                        statusClass = 'status-cancelled';
+                        statusText = '已取消';
+                        break;
+                }
+                
+                // 判断用户角色
+                const isMyOrder = order.created_by === currentUser.id;
+                const userRole = isMyOrder ? '发布者' : '接单者';
+                
+                detailModal.innerHTML = `
+                    <div class="order-detail-content">
+                        <div class="order-detail-header">
+                            <div class="order-detail-title">订单详情</div>
+                            <button class="order-detail-close" onclick="closeOrderDetail()">×</button>
+                        </div>
+                        
+                        <div class="order-detail-section">
+                            <h4>基本信息</h4>
+                            <div class="order-detail-info">
+                                <div class="order-detail-item">
+                                    <span class="order-detail-label">订单ID：</span>
+                                    <span class="order-detail-value">${order.id.slice(-8)}</span>
+                                </div>
+                                <div class="order-detail-item">
+                                    <span class="order-detail-label">订单类型：</span>
+                                    <span class="order-detail-value">${orderType === 'delivery' ? '代取快递' : '跑腿任务'}</span>
+                                </div>
+                                <div class="order-detail-item">
+                                    <span class="order-detail-label">您的角色：</span>
+                                    <span class="order-detail-value">${userRole}</span>
+                                </div>
+                                <div class="order-detail-item">
+                                    <span class="order-detail-label">订单状态：</span>
+                                    <span class="order-detail-value ${statusClass}">${statusText}</span>
+                                </div>
+                                <div class="order-detail-item">
+                                    <span class="order-detail-label">酬劳：</span>
+                                    <span class="order-detail-value">${order.reward}元</span>
+                                </div>
+                                <div class="order-detail-item">
+                                    <span class="order-detail-label">创建时间：</span>
+                                    <span class="order-detail-value">${new Date(order.created_at).toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${orderType === 'delivery' ? `
+                            <div class="order-detail-section">
+                                <h4>代取详情</h4>
+                                <div class="order-detail-info">
+                                    <div class="order-detail-item">
+                                        <span class="order-detail-label">取件地址：</span>
+                                        <span class="order-detail-value">${order.pickup_address}</span>
+                                    </div>
+                                    <div class="order-detail-item">
+                                        <span class="order-detail-label">送达地址：</span>
+                                        <span class="order-detail-value">${order.delivery_address}</span>
+                                    </div>
+                                    <div class="order-detail-item">
+                                        <span class="order-detail-label">期望送达时间：</span>
+                                        <span class="order-detail-value">${new Date(order.delivery_time).toLocaleString()}</span>
+                                    </div>
+                                    <div class="order-detail-item">
+                                        <span class="order-detail-label">取件码：</span>
+                                        <span class="order-detail-value">${order.pickup_code}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="order-detail-section">
+                                <h4>任务详情</h4>
+                                <div class="order-detail-info">
+                                    <div class="order-detail-item">
+                                        <span class="order-detail-label">任务标题：</span>
+                                        <span class="order-detail-value">${order.title}</span>
+                                    </div>
+                                    <div class="order-detail-item">
+                                        <span class="order-detail-label">任务描述：</span>
+                                        <span class="order-detail-value">${order.description}</span>
+                                    </div>
+                                    <div class="order-detail-item">
+                                        <span class="order-detail-label">取物地点：</span>
+                                        <span class="order-detail-value">${order.pickup_location}</span>
+                                    </div>
+                                    <div class="order-detail-item">
+                                        <span class="order-detail-label">送达地点：</span>
+                                        <span class="order-detail-value">${order.delivery_location}</span>
+                                    </div>
+                                    <div class="order-detail-item">
+                                        <span class="order-detail-label">期望完成时间：</span>
+                                        <span class="order-detail-value">${new Date(order.deadline).toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `}
+                        
+                        <div class="order-detail-section">
+                            <h4>联系人信息</h4>
+                            <div class="order-detail-info">
+                                <div class="order-detail-item">
+                                    <span class="order-detail-label">发布者：</span>
+                                    <span class="order-detail-value">${order.contact_name}</span>
+                                </div>
+                                <div class="order-detail-item">
+                                    <span class="order-detail-label">联系方式：</span>
+                                    <span class="order-detail-value">${order.contact_info}</span>
+                                </div>
+                                ${order.taken_by ? `
+                                    <div class="order-detail-item">
+                                        <span class="order-detail-label">接单者：</span>
+                                        <span class="order-detail-value">${order.taker_name}</span>
+                                    </div>
+                                    <div class="order-detail-item">
+                                        <span class="order-detail-label">接单者联系方式：</span>
+                                        <span class="order-detail-value">${order.taker_contact}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        ${order.notes ? `
+                            <div class="order-detail-section">
+                                <h4>备注</h4>
+                                <div class="order-detail-info">
+                                    <div class="order-detail-item">
+                                        <span class="order-detail-label">备注信息：</span>
+                                        <span class="order-detail-value">${order.notes}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="order-actions" style="margin-top: 20px;">
+                            ${(order.status === 'taken' || order.status === 'processing' || order.status === 'delivered') && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
+                                `<button class="action-btn btn-chat" onclick="openChat('${order.id}', '${orderType}')">联系对方</button>` : ''}
+                            ${order.status === 'processing' && order.taken_by === currentUser.id ? 
+                                `<button class="action-btn btn-delivered" onclick="markAsDelivered('${order.id}', '${orderType}')">已送达</button>` : ''}
+                            ${order.status === 'delivered' && order.created_by === currentUser.id ? 
+                                `<button class="action-btn btn-confirm" onclick="confirmCompletion('${order.id}', '${orderType}')">确认完成</button>` : ''}
+                            ${order.status === 'completed' ? 
+                                (async () => {
+                                    const hasRated = await checkIfRated(order.id, orderType);
+                                    return !hasRated ? `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', '${orderType}')">评价</button>` : '';
+                                })() : ''}
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(detailModal);
+                
+            } catch (error) {
+                console.error('加载订单详情失败:', error);
+                alert('加载订单详情失败！');
+            }
+        }
+        
+        function closeOrderDetail() {
+            const detailModal = document.querySelector('.order-detail-modal');
+            if (detailModal) {
+                detailModal.remove();
+            }
+        }
+
+        // 新增功能：消息推送
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                console.log("浏览器不支持通知");
+                return;
+            }
+            
+            if (Notification.permission === "default") {
+                Notification.requestPermission().then(permission => {
+                    notificationPermission = permission === "granted";
+                    console.log("通知权限状态:", permission);
+                });
+            } else {
+                notificationPermission = Notification.permission === "granted";
+            }
+        }
+        
+        function sendNotification(title, body) {
+            if (!notificationPermission) return;
+            
+            if (Notification.permission === "granted") {
+                new Notification(title, {
+                    body: body,
+                    icon: '/favicon.ico' // 可以替换为您的图标
+                });
+            }
+        }
+
+        // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
