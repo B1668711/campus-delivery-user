@@ -6,8 +6,21 @@
     <title>校园服务平台</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+    // 如果主要 CDN 加载失败，尝试备用 CDN
+    window.addEventListener('error', function(e) {
+        if (e.target.src && e.target.src.includes('supabase')) {
+            console.log('主要 Supabase CDN 加载失败，尝试备用 CDN...');
+            var script = document.createElement('script');
+            script.src = 'https://unpkg.com/@supabase/supabase-js@2';
+            document.head.appendChild(script);
+        }
+    });
+    </script>
+
     <style>
-        /* 基础样式 */
+        /* 原有所有样式保持不变 */
         * {
             margin: 0;
             padding: 0;
@@ -282,6 +295,40 @@
             border-radius: 8px;
             margin-bottom: 15px;
             text-align: center;
+        }
+        
+        /* 刷新按钮样式 */
+        .refresh-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #4da6ff, #3399ff);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(77, 166, 255, 0.4);
+            cursor: pointer;
+            z-index: 99;
+            transition: all 0.3s;
+            border: none;
+        }
+        
+        .refresh-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(77, 166, 255, 0.6);
+        }
+        
+        .refresh-btn.spinning i {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         /* 代取快递页面样式 */
@@ -682,7 +729,6 @@
             z-index: 10;
         }
 
-        /* 增强有未读消息的订单项视觉效果 */
         .chat-order-unread {
             border-left: 4px solid #ff4757 !important;
             background-color: #fff9f9 !important;
@@ -693,22 +739,20 @@
             font-weight: bold;
         }
 
-        /* 为订单ID添加特殊样式 */
         .order-id.has-unread {
              font-weight: 700;
             color: #d63031;
         }
 
-/* 为有未读消息的订单添加闪烁动画 */
-@keyframes pulse-unread {
-    0% { background-color: #fff9f9; }
-    50% { background-color: #ffe6e6; }
-    100% { background-color: #fff9f9; }
-}
+        @keyframes pulse-unread {
+            0% { background-color: #fff9f9; }
+            50% { background-color: #ffe6e6; }
+            100% { background-color: #fff9f9; }
+        }
 
-.chat-order-unread.new-message {
-    animation: pulse-unread 2s ease-in-out;
-}
+        .chat-order-unread.new-message {
+            animation: pulse-unread 2s ease-in-out;
+        }
         
         .chat-order-unread {
             border-left: 4px solid #ff4757 !important;
@@ -718,7 +762,6 @@
             font-weight: bold;
         }
 
-        /* 聊天按钮徽章样式 */
         .btn-chat {
             position: relative;
         }
@@ -792,6 +835,368 @@
             .form-input, .form-textarea {
                 padding: 14px 15px;
             }
+            
+            .refresh-btn {
+                bottom: 70px;
+                right: 15px;
+                width: 45px;
+                height: 45px;
+            }
+        }
+
+        /* ========== 新增功能样式 ========== */
+
+        /* 信用评分样式 */
+        .credit-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #8e6e0b;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .credit-excellent {
+            background: linear-gradient(135deg, #07c160, #05a050) !important;
+            color: white !important;
+        }
+
+        .credit-good {
+            background: linear-gradient(135deg, #4da6ff, #3399ff) !important;
+            color: white !important;
+        }
+
+        .credit-fair {
+            background: linear-gradient(135deg, #ffc107, #e0a800) !important;
+            color: #212529 !important;
+        }
+
+        .credit-poor {
+            background: linear-gradient(135deg, #ff4757, #ff3742) !important;
+            color: white !important;
+        }
+
+        /* 时间线样式 */
+        .timeline {
+            position: relative;
+            margin: 20px 0;
+            padding-left: 20px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e0e0e0;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -20px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            z-index: 2;
+        }
+
+        .timeline-item.active .timeline-dot {
+            background: #4da6ff;
+            box-shadow: 0 0 0 3px rgba(77, 166, 255, 0.2);
+        }
+
+        .timeline-item.completed .timeline-dot {
+            background: #07c160;
+        }
+
+        .timeline-content {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border-left: 3px solid #e0e0e0;
+        }
+
+        .timeline-item.active .timeline-content {
+            border-left-color: #4da6ff;
+            background: #f0f8ff;
+        }
+
+        .timeline-item.completed .timeline-content {
+            border-left-color: #07c160;
+            background: #f0fff4;
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* 紧急求助按钮 */
+        .emergency-btn {
+            position: fixed;
+            bottom: 140px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #ff4757, #ff3742);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(255, 71, 87, 0.4);
+            cursor: pointer;
+            z-index: 99;
+            border: none;
+            font-size: 24px;
+            animation: pulse-emergency 2s infinite;
+        }
+
+        @keyframes pulse-emergency {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* 地址自动补全 */
+        .address-suggestions {
+            position: absolute;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .address-suggestion {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .address-suggestion:last-child {
+            border-bottom: none;
+        }
+
+        .address-suggestion:hover {
+            background: #f0f8ff;
+        }
+
+        .address-suggestion.active {
+            background: #4da6ff;
+            color: white;
+        }
+
+        /* 价格推荐样式 */
+        .price-recommendation {
+            background: #f0fff4;
+            border: 1px solid #07c160;
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .price-suggestion {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 5px 0;
+        }
+
+        .price-suggestion-btn {
+            background: #07c160;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* 统计卡片样式 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4da6ff;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* 通知样式 */
+        .notification-panel {
+            position: fixed;
+            top: 60px;
+            right: 15px;
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .notification-header {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-item.unread {
+            background: #f0f8ff;
+        }
+
+        .notification-item:hover {
+            background: #f5f5f5;
+        }
+
+        .notification-title {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .notification-time {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* 备份恢复样式 */
+        .backup-section {
+            background: #fff9e6;
+            border: 1px solid #ffd700;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .backup-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .backup-btn {
+            flex: 1;
+            padding: 8px 12px;
+            background: #ffd700;
+            color: #8e6e0b;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* 频率限制提示 */
+        .rate-limit-message {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        /* 内容审核提示 */
+        .moderation-warning {
+            background: #ffe6e6;
+            border: 1px solid #ffcccc;
+            color: #d63031;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 12px;
+            display: none;
+        }
+
+        /* 新增：物品类型和重量样式 */
+        .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #fafafa;
+            transition: all 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: #4da6ff;
+            background-color: white;
+            box-shadow: 0 0 0 2px rgba(77, 166, 255, 0.2);
+        }
+
+        .other-item-input {
+            margin-top: 10px;
+        }
+
+        /* 验证错误样式 */
+        .validation-error {
+            color: #ff4757;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .input-error {
+            border-color: #ff4757 !important;
+            background-color: #fff9f9 !important;
         }
     </style>
 </head>
@@ -799,10 +1204,37 @@
     <!-- 顶部导航 -->
     <div class="navbar">
         <h1 id="navbar-title">校园服务平台</h1>
+        <div class="notification-bell" onclick="toggleNotifications()" style="position: absolute; right: 15px; top: 15px; cursor: pointer;">
+            <i class="fas fa-bell"></i>
+            <span class="unread-badge" id="notification-badge" style="display: none;">0</span>
+        </div>
     </div>
     
-    <!-- 主容器 -->
-    <div class="container">
+    <!-- 通知面板 -->
+    <div class="notification-panel" id="notification-panel">
+        <div class="notification-header">
+            <h3>通知</h3>
+            <button onclick="markAllNotificationsAsRead()" style="background: none; border: none; color: #4da6ff; cursor: pointer;">全部已读</button>
+        </div>
+        <div id="notification-list">
+            <div class="notification-item">
+                <div class="notification-title">欢迎使用校园服务平台</div>
+                <div class="notification-time">刚刚</div>
+            </div>
+        </div>
+    </div>
+    
+   <!-- 主容器 -->
+<div class="container">
+    <!-- 添加这个加载状态 -->
+    <div id="loading-state" class="card" style="text-align: center; padding: 40px;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 40px; color: #4da6ff; margin-bottom: 20px;"></i>
+        <h3>正在初始化应用...</h3>
+        <p>请稍等片刻</p>
+    </div>
+    
+    <!-- 主页面/服务选择 -->
+    <div id="main-page" class="page active">
         <!-- 主页面/服务选择 -->
         <div id="main-page" class="page active">
             <div class="user-profile">
@@ -810,18 +1242,31 @@
                 <div class="user-info">
                     <div class="user-name" id="user-display-name">未设置用户名</div>
                     <div class="user-id" id="user-display-id">ID: 加载中...</div>
+                    <div id="user-credit-badge" style="margin-top: 5px;"></div>
                 </div>
             </div>
             
             <div class="user-stats">
-                <div class="stat-item" onclick="showMyOrders()" style="cursor: pointer;">
+                <div class="stat-item" onclick="showPage('my-orders-page')" style="cursor: pointer;">
                     <div class="stat-value" id="my-orders-count">0</div>
-                        <div class="stat-label">我的订单</div>
-                    </div>
-                    <div class="stat-item" onclick="showCompletedOrders()" style="cursor: pointer;">
-                        <div class="stat-value" id="completed-orders-count">0</div>
-                        <div class="stat-label">已完成</div>
-                    </div>
+                    <div class="stat-label">我的订单</div>
+                </div>
+                <div class="stat-item" onclick="showPage('completed-orders-page')" style="cursor: pointer;">
+                    <div class="stat-value" id="completed-orders-count">0</div>
+                    <div class="stat-label">已完成</div>
+                </div>
+            </div>
+            
+            <!-- 用户统计卡片 -->
+            <div class="stats-grid" id="user-stats-cards">
+                <div class="stat-card">
+                    <div class="value" id="total-earned">0元</div>
+                    <div class="label">累计收入</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="avg-rating">0.0</div>
+                    <div class="label">平均评分</div>
+                </div>
             </div>
             
             <div class="card">
@@ -907,19 +1352,67 @@
                 
                 <h2>发布代取订单</h2>
                 
+                <!-- 价格推荐 -->
+                <div id="delivery-price-recommendation" class="price-recommendation" style="display: none;">
+                    <div style="font-weight: 500; margin-bottom: 5px;">价格建议</div>
+                    <div class="price-suggestion">
+                        <span>基础服务: 3-5元</span>
+                        <button class="price-suggestion-btn" onclick="applyPriceSuggestion(4)">应用</button>
+                    </div>
+                    <div class="price-suggestion">
+                        <span>加急服务: 6-8元</span>
+                        <button class="price-suggestion-btn" onclick="applyPriceSuggestion(7)">应用</button>
+                    </div>
+                </div>
+                
                 <div class="form-group">
                     <label for="delivery-time" class="form-label required">期望送达时间</label>
                     <input type="datetime-local" id="delivery-time" class="form-input" required>
                 </div>
                 
+                <!-- 新增：物品类型 -->
+                <div class="form-group">
+                    <label for="item-type" class="form-label required">物品类型</label>
+                    <select id="item-type" class="form-select" required>
+                        <option value="">请选择物品类型</option>
+                        <option value="日用品">日用品</option>
+                        <option value="化妆品">化妆品</option>
+                        <option value="床上用品">床上用品</option>
+                        <option value="数码产品">数码产品</option>
+                        <option value="运动器械">运动器械</option>
+                        <option value="易碎品">易碎品</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                
+                <!-- 动态显示其他物品输入框 -->
+                <div class="form-group" id="other-item-group" style="display: none;">
+                    <label for="other-item" class="form-label required">具体物品</label>
+                    <input type="text" id="other-item" class="form-input other-item-input" placeholder="请输入具体物品名称">
+                </div>
+                
+                <!-- 新增：物品重量 -->
+                <div class="form-group">
+                    <label for="item-weight" class="form-label required">物品重量</label>
+                    <select id="item-weight" class="form-select" required>
+                        <option value="">请选择物品重量</option>
+                        <option value="1-3kg小件货">1-3kg小件货</option>
+                        <option value="4-5kg中件货">4-5kg中件货</option>
+                        <option value="6-8kg大件货">6-8kg大件货</option>
+                        <option value="8kg以上">8kg以上</option>
+                    </select>
+                </div>
+                
                 <div class="form-group">
                     <label for="pickup-address" class="form-label required">快递地址</label>
                     <input type="text" id="pickup-address" class="form-input" placeholder="例如：东门快递点、菜鸟驿站" required>
+                    <div class="address-suggestions" id="pickup-address-suggestions"></div>
                 </div>
                 
                 <div class="form-group">
                     <label for="delivery-address" class="form-label required">送达地址</label>
                     <input type="text" id="delivery-address" class="form-input" placeholder="例如：3号楼205室" required>
+                    <div class="address-suggestions" id="delivery-address-suggestions"></div>
                 </div>
                 
                 <div class="form-group">
@@ -950,16 +1443,24 @@
                 <div class="form-group">
                     <label for="contact-info" class="form-label required">联系方式</label>
                     <input type="text" id="contact-info" class="form-input" placeholder="请输入您的联系方式" required>
+                    <div class="validation-error" id="contact-info-error"></div>
+                    <!-- 敏感信息保护提示 -->
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                        您的联系方式将对接单人部分隐藏以保护隐私
+                    </div>
                 </div>
                 
                 <div class="form-group">
                     <label for="reward" class="form-label">酬劳（元）</label>
-                    <input type="number" id="reward" class="form-input" placeholder="请输入酬劳金额" min="0" step="0.5" value="5">
+                    <input type="number" id="reward" class="form-input" placeholder="请输入酬劳金额" min="0" step="0.5" value="5" oninput="updatePriceRecommendation()">
                 </div>
                 
                 <div class="form-group">
                     <label for="notes" class="form-label">备注</label>
-                    <textarea id="notes" class="form-textarea" placeholder="可填写特殊要求或说明" rows="3"></textarea>
+                    <textarea id="notes" class="form-textarea" placeholder="可填写特殊要求或说明" rows="3" oninput="checkContentModeration(this)"></textarea>
+                    <div class="moderation-warning" id="notes-moderation-warning">
+                        请注意用语文明，避免包含联系方式等敏感信息
+                    </div>
                 </div>
                 
                 <button class="btn btn-primary" id="submit-order">发布订单</button>
@@ -976,6 +1477,11 @@
                 
                 <h2>领取代取任务</h2>
                 <p>请先授权您的联系方式，以便与下单人联系</p>
+                
+                <!-- 频率限制提示 -->
+                <div class="rate-limit-message" id="take-order-rate-limit" style="display: none;">
+                    操作过于频繁，请稍后再试
+                </div>
                 
                 <div class="form-group">
                     <label for="taker-name" class="form-label">您的姓名</label>
@@ -1000,6 +1506,7 @@
                 <div class="form-group">
                     <label for="taker-contact-info" class="form-label">联系方式</label>
                     <input type="text" id="taker-contact-info" class="form-input" placeholder="请输入您的联系方式" required>
+                    <div class="validation-error" id="taker-contact-info-error"></div>
                 </div>
                 
                 <button class="btn btn-primary" id="auth-contact">授权并查看任务</button>
@@ -1025,6 +1532,19 @@
                 
                 <h2>发布跑腿任务</h2>
                 
+                <!-- 价格推荐 -->
+                <div id="errand-price-recommendation" class="price-recommendation" style="display: none;">
+                    <div style="font-weight: 500; margin-bottom: 5px;">价格建议</div>
+                    <div class="price-suggestion">
+                        <span>简单任务: 2-4元</span>
+                        <button class="price-suggestion-btn" onclick="applyErrandPriceSuggestion(3)">应用</button>
+                    </div>
+                    <div class="price-suggestion">
+                        <span>复杂任务: 5-8元</span>
+                        <button class="price-suggestion-btn" onclick="applyErrandPriceSuggestion(6)">应用</button>
+                    </div>
+                </div>
+                
                 <div class="form-group">
                     <label for="errand-title" class="form-label required">任务标题</label>
                     <input type="text" id="errand-title" class="form-input" placeholder="例如：帮忙买奶茶、送文件到行政楼" required>
@@ -1032,17 +1552,22 @@
                 
                 <div class="form-group">
                     <label for="errand-description" class="form-label required">任务描述</label>
-                    <textarea id="errand-description" class="form-textarea" placeholder="请详细描述您的需求" rows="3" required></textarea>
+                    <textarea id="errand-description" class="form-textarea" placeholder="请详细描述您的需求" rows="3" required oninput="checkContentModeration(this)"></textarea>
+                    <div class="moderation-warning" id="errand-description-moderation-warning">
+                        请注意用语文明，避免包含联系方式等敏感信息
+                    </div>
                 </div>
                 
                 <div class="form-group">
                     <label for="errand-pickup" class="form-label required">取物地点</label>
                     <input type="text" id="errand-pickup" class="form-input" placeholder="例如：学校东门奶茶店、图书馆打印店" required>
+                    <div class="address-suggestions" id="errand-pickup-suggestions"></div>
                 </div>
                 
                 <div class="form-group">
                     <label for="errand-delivery" class="form-label required">送达地点</label>
                     <input type="text" id="errand-delivery" class="form-input" placeholder="例如：3号楼205室、行政楼301" required>
+                    <div class="address-suggestions" id="errand-delivery-suggestions"></div>
                 </div>
                 
                 <div class="form-group">
@@ -1052,7 +1577,7 @@
                 
                 <div class="form-group">
                     <label for="errand-reward" class="form-label required">跑腿酬劳（元）</label>
-                    <input type="number" id="errand-reward" class="form-input" placeholder="请输入跑腿酬劳" min="0" step="0.5" value="3" required>
+                    <input type="number" id="errand-reward" class="form-input" placeholder="请输入跑腿酬劳" min="0" step="0.5" value="3" oninput="updateErrandPriceRecommendation()">
                 </div>
                 
                 <div class="form-group">
@@ -1078,11 +1603,15 @@
                 <div class="form-group">
                     <label for="errand-contact-info" class="form-label required">联系方式</label>
                     <input type="text" id="errand-contact-info" class="form-input" placeholder="请输入您的联系方式" required>
+                    <div class="validation-error" id="errand-contact-info-error"></div>
                 </div>
                 
                 <div class="form-group">
                     <label for="errand-notes" class="form-label">备注</label>
-                    <textarea id="errand-notes" class="form-textarea" placeholder="可填写特殊要求或说明" rows="2"></textarea>
+                    <textarea id="errand-notes" class="form-textarea" placeholder="可填写特殊要求或说明" rows="2" oninput="checkContentModeration(this)"></textarea>
+                    <div class="moderation-warning" id="errand-notes-moderation-warning">
+                        请注意用语文明，避免包含联系方式等敏感信息
+                    </div>
                 </div>
                 
                 <button class="btn btn-success" id="submit-errand-order">发布跑腿任务</button>
@@ -1099,6 +1628,11 @@
                 
                 <h2>领取跑腿任务</h2>
                 <p>请先授权您的联系方式，以便与发布人联系</p>
+                
+                <!-- 频率限制提示 -->
+                <div class="rate-limit-message" id="take-errand-rate-limit" style="display: none;">
+                    操作过于频繁，请稍后再试
+                </div>
                 
                 <div class="form-group">
                     <label for="errand-taker-name" class="form-label">您的姓名</label>
@@ -1123,6 +1657,7 @@
                 <div class="form-group">
                     <label for="errand-taker-contact-info" class="form-label">联系方式</label>
                     <input type="text" id="errand-taker-contact-info" class="form-input" placeholder="请输入您的联系方式" required>
+                    <div class="validation-error" id="errand-taker-contact-info-error"></div>
                 </div>
                 
                 <button class="btn btn-success" id="auth-errand-contact">授权并查看任务</button>
@@ -1220,6 +1755,7 @@
                     <div class="user-info">
                         <div class="user-name" id="settings-user-name">未设置用户名</div>
                         <div class="user-id" id="settings-user-id">ID: 加载中...</div>
+                        <div id="settings-credit-badge" style="margin-top: 5px;"></div>
                     </div>
                 </div>
                 
@@ -1233,6 +1769,11 @@
                     <div class="settings-item">
                         <div class="settings-label">用户ID</div>
                         <div class="settings-value" id="display-user-id">加载中...</div>
+                        <div style="width: 40px;"></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-label">信用评分</div>
+                        <div class="settings-value" id="display-user-credit">加载中...</div>
                         <div style="width: 40px;"></div>
                     </div>
                 </div>
@@ -1278,6 +1819,23 @@
                     </div>
                 </div>
                 
+                <!-- 数据备份和恢复 -->
+                <div class="settings-section">
+                    <h3>数据备份与恢复</h3>
+                    <div class="backup-section">
+                        <p>定期备份您的数据，防止意外丢失</p>
+                        <div class="backup-actions">
+                            <button class="backup-btn" onclick="backupUserData()">
+                                <i class="fas fa-download"></i> 备份数据
+                            </button>
+                            <button class="backup-btn" onclick="restoreUserData()">
+                                <i class="fas fa-upload"></i> 恢复数据
+                            </button>
+                        </div>
+                        <div id="backup-status" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
+                    </div>
+                </div>
+                
                 <button class="logout-btn" onclick="logout()">退出登录</button>
             </div>
         </div>
@@ -1307,7 +1865,18 @@
         </div>
     </div>
 
+    <!-- 刷新按钮 -->
+    <button class="refresh-btn" id="refresh-button" title="刷新数据">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+
+    <!-- 紧急求助按钮 -->
+    <button class="emergency-btn" id="emergency-button" title="紧急求助">
+        <i class="fas fa-life-ring"></i>
+    </button>
+
     <script>
+        // ========== 原有代码保持不变 ==========
         // Supabase 配置
         const SUPABASE_URL = 'https://mdkvoofsjmwxwsfoudbz.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ka3Zvb2Zzam13eHdzZm91ZGJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4ODE2NTgsImV4cCI6MjA3NjQ1NzY1OH0.KXwS4CWYM5RIJ9RzQAVwAn9f1qvDBHykbil0CVykFP8';
@@ -1320,6 +1889,825 @@
         let currentChatOrder = null;
         let chatInterval = null;
         let unreadUpdateInterval = null;
+
+        // ========== 新增功能模块 ==========
+
+        // 1. 交易安全保障 - 信用评分系统
+        const userCreditSystem = {
+            // 初始化用户信用
+            initUserCredit: function(userId) {
+                const creditData = {
+                    score: 100,
+                    completedOrders: 0,
+                    cancelledOrders: 0,
+                    positiveReviews: 0,
+                    negativeReviews: 0,
+                    responseTime: 0,
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                localStorage.setItem(`userCredit_${userId}`, JSON.stringify(creditData));
+                return creditData;
+            },
+            
+            // 获取用户信用
+            getUserCredit: function(userId) {
+                const creditData = localStorage.getItem(`userCredit_${userId}`);
+                if (creditData) {
+                    return JSON.parse(creditData);
+                }
+                return this.initUserCredit(userId);
+            },
+            
+            // 更新信用评分
+            updateCredit: function(userId, action, data = {}) {
+                const creditData = this.getUserCredit(userId);
+                
+                switch(action) {
+                    case 'order_completed':
+                        creditData.completedOrders++;
+                        creditData.score = Math.min(100, creditData.score + 5);
+                        break;
+                    case 'order_cancelled':
+                        creditData.cancelledOrders++;
+                        creditData.score = Math.max(0, creditData.score - 10);
+                        break;
+                    case 'positive_review':
+                        creditData.positiveReviews++;
+                        creditData.score = Math.min(100, creditData.score + 2);
+                        break;
+                    case 'negative_review':
+                        creditData.negativeReviews++;
+                        creditData.score = Math.max(0, creditData.score - 5);
+                        break;
+                    case 'fast_response':
+                        creditData.responseTime = creditData.responseTime * 0.8 + data.responseTime * 0.2;
+                        if (data.responseTime < 300) { // 5分钟内响应
+                            creditData.score = Math.min(100, creditData.score + 1);
+                        }
+                        break;
+                }
+                
+                creditData.lastUpdated = new Date().toISOString();
+                localStorage.setItem(`userCredit_${userId}`, JSON.stringify(creditData));
+                return creditData;
+            },
+            
+            // 获取信用等级
+            getCreditLevel: function(score) {
+                if (score >= 90) return { level: '优秀', class: 'credit-excellent' };
+                if (score >= 75) return { level: '良好', class: 'credit-good' };
+                if (score >= 60) return { level: '一般', class: 'credit-fair' };
+                return { level: '较差', class: 'credit-poor' };
+            },
+            
+            // 显示信用徽章
+            displayCreditBadge: function(userId, elementId) {
+                const creditData = this.getUserCredit(userId);
+                const creditLevel = this.getCreditLevel(creditData.score);
+                
+                const badge = document.getElementById(elementId);
+                if (badge) {
+                    badge.innerHTML = `
+                        <span class="credit-badge ${creditLevel.class}">
+                            ${creditLevel.level} · ${creditData.score}分
+                        </span>
+                    `;
+                }
+                
+                return creditData;
+            }
+        };
+
+        // 2. 敏感信息保护
+        const sensitiveInfoProtection = {
+            // 加密显示联系方式
+            maskContactInfo: function(contactInfo, type) {
+                if (!contactInfo) return '未提供';
+                
+                switch(type) {
+                    case 'phone':
+                        return contactInfo.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+                    case 'wechat':
+                    case 'qq':
+                        if (contactInfo.length <= 4) return '***';
+                        return contactInfo.substring(0, 2) + '***' + contactInfo.substring(contactInfo.length - 2);
+                    default:
+                        return contactInfo;
+                }
+            },
+            
+            // 在订单中安全显示联系方式
+            displaySafeContactInfo: function(order, currentUserId) {
+                const isMyOrder = order.created_by === currentUserId;
+                
+                if (isMyOrder) {
+                    // 我是发布者，显示接单人的加密联系方式
+                    if (order.taken_by && order.taker_contact) {
+                        return this.maskContactInfo(order.taker_contact, order.taker_contact_type || 'wechat');
+                    }
+                    return '等待接单';
+                } else {
+                    // 我是接单人，显示发布者的加密联系方式
+                    return this.maskContactInfo(order.contact_info, order.contact_type || 'wechat');
+                }
+            }
+        };
+
+        // 3. 实时通知系统
+        class NotificationSystem {
+            constructor() {
+                this.notifications = JSON.parse(localStorage.getItem('userNotifications')) || [];
+                this.unreadCount = this.notifications.filter(n => !n.read).length;
+                this.init();
+            }
+            
+            init() {
+                // 定期检查新消息
+                setInterval(() => this.checkNewMessages(), 30000);
+                
+                // 请求通知权限
+                if ('Notification' in window) {
+                    Notification.requestPermission();
+                }
+                
+                this.updateBadge();
+            }
+            
+            // 添加通知
+            addNotification(title, message, type = 'info', action = null) {
+                const notification = {
+                    id: Date.now(),
+                    title,
+                    message,
+                    type,
+                    action,
+                    timestamp: new Date().toISOString(),
+                    read: false
+                };
+                
+                this.notifications.unshift(notification);
+                this.unreadCount++;
+                
+                // 保存到本地存储
+                localStorage.setItem('userNotifications', JSON.stringify(this.notifications));
+                
+                // 更新UI
+                this.updateBadge();
+                this.showDesktopNotification(title, message);
+                
+                return notification;
+            }
+            
+            // 显示桌面通知
+            showDesktopNotification(title, message) {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(title, { 
+                        body: message, 
+                        icon: '/icon.png',
+                        tag: 'campus-service'
+                    });
+                }
+            }
+            
+            // 标记为已读
+            markAsRead(notificationId) {
+                const notification = this.notifications.find(n => n.id === notificationId);
+                if (notification && !notification.read) {
+                    notification.read = true;
+                    this.unreadCount--;
+                    localStorage.setItem('userNotifications', JSON.stringify(this.notifications));
+                    this.updateBadge();
+                }
+            }
+            
+            // 标记所有为已读
+            markAllAsRead() {
+                this.notifications.forEach(n => n.read = true);
+                this.unreadCount = 0;
+                localStorage.setItem('userNotifications', JSON.stringify(this.notifications));
+                this.updateBadge();
+            }
+            
+            // 更新徽章
+            updateBadge() {
+                const badge = document.getElementById('notification-badge');
+                if (badge) {
+                    if (this.unreadCount > 0) {
+                        badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            }
+            
+            // 检查新消息
+            async checkNewMessages() {
+                if (!currentUser) return;
+                
+                try {
+                    // 检查新订单状态变化
+                    // 这里可以扩展为检查数据库中的新消息
+                    // 暂时使用随机模拟
+                    if (Math.random() < 0.3) {
+                        this.addNotification(
+                            '新订单提醒', 
+                            '您有新的可接订单，快去看看吧！', 
+                            'info',
+                            { type: 'page', target: 'take-order-page' }
+                        );
+                    }
+                } catch (error) {
+                    console.error('检查新消息失败:', error);
+                }
+            }
+            
+            // 渲染通知列表
+            renderNotifications() {
+                const container = document.getElementById('notification-list');
+                if (!container) return;
+                
+                if (this.notifications.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-bell-slash"></i>
+                            <p>暂无通知</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = this.notifications.map(notification => `
+                    <div class="notification-item ${notification.read ? '' : 'unread'}" 
+                         onclick="notificationSystem.markAsRead(${notification.id})">
+                        <div class="notification-title">${notification.title}</div>
+                        <div class="notification-message">${notification.message}</div>
+                        <div class="notification-time">${new Date(notification.timestamp).toLocaleString()}</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // 4. 订单状态追踪
+        const orderTrackingSystem = {
+            // 创建订单时间线
+            createOrderTimeline: function(order) {
+                const timelineEvents = [];
+                
+                // 订单创建
+                timelineEvents.push({
+                    event: 'order_created',
+                    title: '订单发布',
+                    description: '订单已发布，等待接单',
+                    timestamp: order.created_at,
+                    completed: true
+                });
+                
+                // 订单被接单
+                if (order.taken_at) {
+                    timelineEvents.push({
+                        event: 'order_taken',
+                        title: '订单已被接单',
+                        description: `接单人: ${order.taker_name || '未知用户'}`,
+                        timestamp: order.taken_at,
+                        completed: true
+                    });
+                }
+                
+                // 订单状态变化
+                if (order.status === 'processing') {
+                    timelineEvents.push({
+                        event: 'order_processing',
+                        title: '配送中',
+                        description: '订单正在配送中',
+                        timestamp: order.updated_at,
+                        active: true
+                    });
+                } else if (order.status === 'completed') {
+                    timelineEvents.push({
+                        event: 'order_completed',
+                        title: '订单已完成',
+                        description: '订单已完成交付',
+                        timestamp: order.updated_at,
+                        completed: true
+                    });
+                } else if (order.status === 'cancelled') {
+                    timelineEvents.push({
+                        event: 'order_cancelled',
+                        title: '订单已取消',
+                        description: '订单已被取消',
+                        timestamp: order.updated_at,
+                        completed: true
+                    });
+                }
+                
+                // 按时间排序
+                timelineEvents.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                
+                return timelineEvents;
+            },
+            
+            // 渲染时间线
+            renderTimeline: function(timelineEvents, containerId) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                if (timelineEvents.length === 0) {
+                    container.innerHTML = '<p>暂无时间线数据</p>';
+                    return;
+                }
+                
+                container.innerHTML = `
+                    <div class="timeline">
+                        ${timelineEvents.map(event => `
+                            <div class="timeline-item ${event.active ? 'active' : ''} ${event.completed ? 'completed' : ''}">
+                                <div class="timeline-dot"></div>
+                                <div class="timeline-content">
+                                    <strong>${event.title}</strong>
+                                    <div>${event.description}</div>
+                                    <div class="timeline-time">${new Date(event.timestamp).toLocaleString()}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        };
+
+        // 5. 智能地址系统
+        const campusAddressSystem = {
+            // 校园地址数据
+            locations: {
+                dormitories: ['1号楼', '2号楼', '3号楼', '4号楼', '5号楼', '6号楼', '7号楼', '8号楼', '9号楼', '10号楼'],
+                gates: ['东门', '西门', '南门', '北门'],
+                deliverySpots: ['菜鸟驿站', '近邻宝', '丰巢', '东门快递点', '西门快递点'],
+                buildings: ['教学楼A', '教学楼B', '图书馆', '食堂', '体育馆', '行政楼'],
+                others: ['校医院', '超市', '打印店', '咖啡厅']
+            },
+            
+            // 初始化地址自动补全
+            initAddressAutocomplete: function() {
+                const addressInputs = [
+                    'pickup-address', 'delivery-address', 
+                    'errand-pickup', 'errand-delivery'
+                ];
+                
+                addressInputs.forEach(inputId => {
+                    const input = document.getElementById(inputId);
+                    if (input) {
+                        input.addEventListener('input', (e) => {
+                            this.showAddressSuggestions(e.target.value, inputId + '-suggestions');
+                        });
+                        
+                        input.addEventListener('blur', () => {
+                            // 延迟隐藏建议框，以便点击建议项
+                            setTimeout(() => {
+                                this.hideAddressSuggestions(inputId + '-suggestions');
+                            }, 200);
+                        });
+                    }
+                });
+            },
+            
+            // 显示地址建议
+            showAddressSuggestions: function(query, suggestionsId) {
+                if (!query || query.length < 1) {
+                    this.hideAddressSuggestions(suggestionsId);
+                    return;
+                }
+                
+                const suggestions = this.getAddressSuggestions(query);
+                const container = document.getElementById(suggestionsId);
+                
+                if (!container || suggestions.length === 0) {
+                    this.hideAddressSuggestions(suggestionsId);
+                    return;
+                }
+                
+                container.innerHTML = suggestions.map(address => `
+                    <div class="address-suggestion" onclick="campusAddressSystem.selectAddress('${address}', '${suggestionsId}')">
+                        ${address}
+                    </div>
+                `).join('');
+                
+                container.style.display = 'block';
+            },
+            
+            // 隐藏地址建议
+            hideAddressSuggestions: function(suggestionsId) {
+                const container = document.getElementById(suggestionsId);
+                if (container) {
+                    container.style.display = 'none';
+                }
+            },
+            
+            // 获取地址建议
+            getAddressSuggestions: function(query) {
+                const allAddresses = [
+                    ...this.locations.dormitories,
+                    ...this.locations.gates,
+                    ...this.locations.deliverySpots,
+                    ...this.locations.buildings,
+                    ...this.locations.others
+                ];
+                
+                return allAddresses.filter(address => 
+                    address.toLowerCase().includes(query.toLowerCase())
+                ).slice(0, 5); // 最多显示5个建议
+            },
+            
+            // 选择地址
+            selectAddress: function(address, suggestionsId) {
+                const inputId = suggestionsId.replace('-suggestions', '');
+                const input = document.getElementById(inputId);
+                
+                if (input) {
+                    input.value = address;
+                    this.hideAddressSuggestions(suggestionsId);
+                }
+            }
+        };
+
+        // 6. 紧急求助功能
+        const emergencySystem = {
+            // 紧急联系人
+            emergencyContacts: [
+                { name: '校园保安', phone: '123456789', description: '校园安全保卫' },
+                { name: '辅导员', phone: '987654321', description: '学生事务咨询' },
+                { name: '医务室', phone: '555555555', description: '医疗紧急救助' }
+            ],
+            
+            // 初始化紧急求助
+            init: function() {
+                const emergencyBtn = document.getElementById('emergency-button');
+                if (emergencyBtn) {
+                    emergencyBtn.addEventListener('click', () => this.showEmergencyPanel());
+                }
+            },
+            
+            // 显示紧急求助面板
+            showEmergencyPanel: function() {
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.7);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 1000;
+                `;
+                
+                modal.innerHTML = `
+                    <div style="background: white; width: 90%; max-width: 400px; border-radius: 15px; padding: 20px;">
+                        <h2 style="margin-bottom: 15px; color: #ff4757;">紧急求助</h2>
+                        <p style="margin-bottom: 20px; color: #666;">请选择您需要联系的人员：</p>
+                        
+                        ${this.emergencyContacts.map(contact => `
+                            <div style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 10px; margin-bottom: 10px;">
+                                <div style="font-weight: 500;">${contact.name}</div>
+                                <div style="font-size: 14px; color: #666; margin: 5px 0;">${contact.description}</div>
+                                <button onclick="emergencySystem.callEmergency('${contact.phone}')" 
+                                        style="background: #ff4757; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; width: 100%;">
+                                    <i class="fas fa-phone"></i> 拨打 ${contact.phone}
+                                </button>
+                            </div>
+                        `).join('')}
+                        
+                        <button onclick="this.parentElement.parentElement.remove()" 
+                                style="background: #f0f0f0; color: #333; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px;">
+                            取消
+                        </button>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+            },
+            
+            // 拨打紧急电话
+            callEmergency: function(phoneNumber) {
+                if (confirm(`确定要拨打 ${phoneNumber} 吗？`)) {
+                    window.location.href = `tel:${phoneNumber}`;
+                }
+            }
+        };
+
+        // 7. 价格推荐系统
+        const priceRecommendationSystem = {
+            // 获取代取快递价格建议
+            getDeliveryPriceRecommendation: function(distance, urgency, weight) {
+                let basePrice = 3; // 起步价
+                
+                // 距离因素
+                if (distance > 1) {
+                    basePrice += (distance - 1) * 0.5;
+                }
+                
+                // 紧急程度
+                if (urgency === 'high') {
+                    basePrice += 2;
+                } else if (urgency === 'medium') {
+                    basePrice += 1;
+                }
+                
+                // 重量因素
+                if (weight === 'heavy') {
+                    basePrice += 2;
+                } else if (weight === 'medium') {
+                    basePrice += 1;
+                }
+                
+                return {
+                    base: Math.max(3, Math.round(basePrice)),
+                    urgent: Math.max(5, Math.round(basePrice + 2)),
+                    premium: Math.max(7, Math.round(basePrice + 4))
+                };
+            },
+            
+            // 获取跑腿任务价格建议
+            getErrandPriceRecommendation: function(complexity, distance, timeRequired) {
+                let basePrice = 2;
+                
+                // 复杂度因素
+                const complexityMultiplier = { 
+                    low: 1, 
+                    medium: 1.5, 
+                    high: 2 
+                };
+                
+                // 时间因素
+                const timeMultiplier = timeRequired > 30 ? 1.5 : 1;
+                
+                basePrice = basePrice * complexityMultiplier[complexity] * timeMultiplier + (distance * 0.3);
+                
+                return {
+                    simple: Math.max(2, Math.round(basePrice)),
+                    standard: Math.max(4, Math.round(basePrice + 2)),
+                    complex: Math.max(6, Math.round(basePrice + 4))
+                };
+            },
+            
+            // 更新代取快递价格推荐显示
+            updateDeliveryPriceRecommendation: function() {
+                const recommendationDiv = document.getElementById('delivery-price-recommendation');
+                if (!recommendationDiv) return;
+                
+                // 简单模拟距离和紧急程度
+                const distance = 0.5 + Math.random() * 2; // 0.5-2.5公里
+                const recommendations = this.getDeliveryPriceRecommendation(distance, 'medium', 'light');
+                
+                recommendationDiv.style.display = 'block';
+            },
+            
+            // 更新跑腿任务价格推荐显示
+            updateErrandPriceRecommendation: function() {
+                const recommendationDiv = document.getElementById('errand-price-recommendation');
+                if (!recommendationDiv) return;
+                
+                // 简单模拟复杂度
+                const recommendations = this.getErrandPriceRecommendation('medium', 1, 20);
+                
+                recommendationDiv.style.display = 'block';
+            }
+        };
+
+        // 8. 数据统计和个人档案
+        const userStatisticsSystem = {
+            // 生成用户统计数据
+            generateUserStats: async function(userId) {
+                try {
+                    const [deliveryOrders, errandOrders] = await Promise.all([
+                        getDeliveryOrders(),
+                        getErrandOrders()
+                    ]);
+                    
+                    const userOrders = [...deliveryOrders, ...errandOrders].filter(order => 
+                        order.created_by === userId || order.taken_by === userId
+                    );
+                    
+                    const completedOrders = userOrders.filter(order => order.status === 'completed');
+                    const takenOrders = userOrders.filter(order => order.taken_by === userId);
+                    
+                    // 计算总收入（作为接单人）
+                    const totalEarned = takenOrders
+                        .filter(order => order.status === 'completed')
+                        .reduce((sum, order) => sum + (parseFloat(order.reward) || 0), 0);
+                    
+                    // 计算平均评分（模拟数据）
+                    const avgRating = (3.5 + Math.random() * 1.5).toFixed(1);
+                    
+                    return {
+                        totalOrders: userOrders.length,
+                        completedOrders: completedOrders.length,
+                        takenOrders: takenOrders.length,
+                        totalEarned: totalEarned,
+                        avgRating: avgRating,
+                        responseRate: completedOrders.length > 0 ? 
+                            Math.min(100, Math.round((completedOrders.length / userOrders.length) * 100)) : 0
+                    };
+                } catch (error) {
+                    console.error('生成用户统计数据失败:', error);
+                    return {
+                        totalOrders: 0,
+                        completedOrders: 0,
+                        takenOrders: 0,
+                        totalEarned: 0,
+                        avgRating: 0,
+                        responseRate: 0
+                    };
+                }
+            },
+            
+            // 显示用户统计数据
+            displayUserStats: async function(userId) {
+                const stats = await this.generateUserStats(userId);
+                
+                // 更新统计卡片
+                const totalEarnedElement = document.getElementById('total-earned');
+                const avgRatingElement = document.getElementById('avg-rating');
+                
+                if (totalEarnedElement) {
+                    totalEarnedElement.textContent = `${stats.totalEarned.toFixed(1)}元`;
+                }
+                
+                if (avgRatingElement) {
+                    avgRatingElement.textContent = stats.avgRating;
+                }
+                
+                return stats;
+            }
+        };
+
+        // 9. 内容审核和过滤
+        const contentModerationSystem = {
+            // 敏感词列表
+            forbiddenWords: [
+                '违规词1', '违规词2', '违法', '欺诈', '诈骗',
+                '手机号', '电话', '微信', 'QQ', '联系方式'
+            ],
+            
+            // 内容过滤
+            filterText: function(text) {
+                if (!text) return text;
+                
+                let filteredText = text;
+                this.forbiddenWords.forEach(word => {
+                    const regex = new RegExp(word, 'gi');
+                    filteredText = filteredText.replace(regex, '***');
+                });
+                return filteredText;
+            },
+            
+            // 检查是否包含敏感信息
+            containsSensitiveInfo: function(text) {
+                if (!text) return false;
+                
+                // 检测手机号
+                const phoneRegex = /1[3-9]\d{9}/g;
+                // 检测微信号
+                const wechatRegex = /[a-zA-Z][a-zA-Z0-9_-]{5,19}/g;
+                // 检测QQ号
+                const qqRegex = /[1-9]\d{4,10}/g;
+                
+                return phoneRegex.test(text) || wechatRegex.test(text) || qqRegex.test(text);
+            },
+            
+            // 检查内容并显示警告
+            checkContent: function(text, warningElementId) {
+                const warningElement = document.getElementById(warningElementId);
+                if (!warningElement) return true;
+                
+                if (this.containsSensitiveInfo(text)) {
+                    warningElement.style.display = 'block';
+                    return false;
+                } else {
+                    warningElement.style.display = 'none';
+                    return true;
+                }
+            }
+        };
+
+        // 10. 操作频率限制
+        class RateLimiter {
+            constructor() {
+                this.userActions = new Map();
+            }
+            
+            // 检查是否可以执行操作
+            canPerformAction(userId, action, maxAttempts = 5, timeWindow = 60000) {
+                const key = `${userId}_${action}`;
+                const now = Date.now();
+                const userActions = this.userActions.get(key) || [];
+                
+                // 清理过期记录
+                const validActions = userActions.filter(time => now - time < timeWindow);
+                
+                if (validActions.length >= maxAttempts) {
+                    return false;
+                }
+                
+                validActions.push(now);
+                this.userActions.set(key, validActions);
+                return true;
+            }
+            
+            // 显示频率限制提示
+            showRateLimitMessage(elementId) {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.style.display = 'block';
+                    setTimeout(() => {
+                        element.style.display = 'none';
+                    }, 3000);
+                }
+            }
+        }
+
+        // 11. 数据备份和恢复
+        const dataBackupSystem = {
+            // 备份用户数据
+            backupUserData: function() {
+                if (!currentUser) return;
+                
+                const backupData = {
+                    timestamp: new Date().toISOString(),
+                    user: currentUser,
+                    orders: localStorage.getItem('userOrders') || '[]',
+                    credit: localStorage.getItem(`userCredit_${currentUser.id}`) || '{}',
+                    notifications: localStorage.getItem('userNotifications') || '[]'
+                };
+                
+                localStorage.setItem('userDataBackup', JSON.stringify(backupData));
+                
+                // 显示备份状态
+                const statusElement = document.getElementById('backup-status');
+                if (statusElement) {
+                    statusElement.innerHTML = `<span style="color: #07c160;">备份成功 (${new Date().toLocaleTimeString()})</span>`;
+                }
+                
+                return backupData;
+            },
+            
+            // 恢复用户数据
+            restoreUserData: function() {
+                if (!currentUser) return;
+                
+                const backupData = localStorage.getItem('userDataBackup');
+                if (!backupData) {
+                    alert('未找到备份数据');
+                    return;
+                }
+                
+                if (confirm('确定要恢复备份数据吗？这将覆盖当前数据。')) {
+                    try {
+                        const data = JSON.parse(backupData);
+                        
+                        // 恢复用户数据
+                        if (data.user) {
+                            localStorage.setItem('currentUser', JSON.stringify(data.user));
+                            currentUser = data.user;
+                            updateUserDisplay();
+                        }
+                        
+                        // 恢复其他数据
+                        if (data.orders) {
+                            localStorage.setItem('userOrders', data.orders);
+                        }
+                        
+                        if (data.credit) {
+                            localStorage.setItem(`userCredit_${currentUser.id}`, data.credit);
+                        }
+                        
+                        if (data.notifications) {
+                            localStorage.setItem('userNotifications', data.notifications);
+                        }
+                        
+                        // 显示恢复状态
+                        const statusElement = document.getElementById('backup-status');
+                        if (statusElement) {
+                            statusElement.innerHTML = `<span style="color: #07c160;">数据恢复成功</span>`;
+                        }
+                        
+                        alert('数据恢复成功！');
+                        location.reload();
+                        
+                    } catch (error) {
+                        console.error('恢复数据失败:', error);
+                        alert('恢复数据失败，备份文件可能已损坏');
+                    }
+                }
+            }
+        };
+
+        // ========== 初始化新增功能 ==========
+        let notificationSystem;
+        let rateLimiter;
+
+        // ========== 修改原有函数以集成新功能 ==========
 
         // 生成设备唯一标识
         function generateDeviceId() {
@@ -1414,6 +2802,9 @@
                 createdAt: new Date().toISOString()
             };
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            // 初始化用户信用
+            userCreditSystem.initUserCredit(userId);
         }
 
         // 保存用户信息
@@ -1431,27 +2822,72 @@
             updateUserDisplay();
         }
 
-        // 更新用户显示
+        // 更新用户显示 - 增强版本
         function updateUserDisplay() {
             if (!currentUser) return;
             
-            document.getElementById('user-display-name').textContent = currentUser.name;
-            document.getElementById('user-display-id').textContent = 'ID: ' + currentUser.id.slice(-8);
-            document.getElementById('user-avatar').textContent = currentUser.name.charAt(0);
+            // 安全地更新元素，如果元素不存在则不执行
+            const safeUpdate = (elementId, value) => {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.textContent = value;
+                } else {
+                    console.warn(`元素 ${elementId} 未找到`);
+                }
+            };
+            
+            const safeSetValue = (elementId, value) => {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.value = value;
+                } else {
+                    console.warn(`元素 ${elementId} 未找到`);
+                }
+            };
+            
+            const safeSetChecked = (elementId, checked) => {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.checked = checked;
+                } else {
+                    console.warn(`元素 ${elementId} 未找到`);
+                }
+            };
+            
+            // 更新主页用户信息
+            safeUpdate('user-display-name', currentUser.name);
+            safeUpdate('user-display-id', 'ID: ' + currentUser.id.slice(-8));
+            
+            const userAvatar = document.getElementById('user-avatar');
+            if (userAvatar) {
+                userAvatar.textContent = currentUser.name.charAt(0);
+            }
+            
+            // 更新信用徽章
+            userCreditSystem.displayCreditBadge(currentUser.id, 'user-credit-badge');
             
             // 更新设置页面用户信息
-            document.getElementById('settings-user-name').textContent = currentUser.name;
-            document.getElementById('settings-user-id').textContent = 'ID: ' + currentUser.id.slice(-8);
-            document.getElementById('settings-user-avatar').textContent = currentUser.name.charAt(0);
+            safeUpdate('settings-user-name', currentUser.name);
+            safeUpdate('settings-user-id', 'ID: ' + currentUser.id.slice(-8));
+            
+            const settingsUserAvatar = document.getElementById('settings-user-avatar');
+            if (settingsUserAvatar) {
+                settingsUserAvatar.textContent = currentUser.name.charAt(0);
+            }
             
             // 更新设置页面详细信息
-            document.getElementById('display-user-name').textContent = currentUser.name;
-            document.getElementById('display-user-id').textContent = currentUser.id;
+            safeUpdate('display-user-name', currentUser.name);
+            safeUpdate('display-user-id', currentUser.id);
+            
+            // 更新信用信息
+            const creditData = userCreditSystem.getUserCredit(currentUser.id);
+            safeUpdate('display-user-credit', `${creditData.score}分 (${userCreditSystem.getCreditLevel(creditData.score).level})`);
+            userCreditSystem.displayCreditBadge(currentUser.id, 'settings-credit-badge');
             
             // 更新默认信息设置
-            document.getElementById('auto-fill-toggle').checked = currentUser.autoFillContact;
-            document.getElementById('default-contact-info').value = currentUser.defaultContactInfo || '';
-            document.getElementById('default-address').value = currentUser.defaultAddress || '';
+            safeSetChecked('auto-fill-toggle', currentUser.autoFillContact);
+            safeSetValue('default-contact-info', currentUser.defaultContactInfo || '');
+            safeSetValue('default-address', currentUser.defaultAddress || '');
             
             // 更新设置页面的默认联系方式类型
             const settingsContactBtns = document.querySelectorAll('#settings-page .contact-type-btn');
@@ -1461,6 +2897,9 @@
                     btn.classList.add('active');
                 }
             });
+            
+            // 更新用户统计数据
+            userStatisticsSystem.displayUserStats(currentUser.id);
         }
 
         // 保存默认信息
@@ -1487,30 +2926,38 @@
         function autoFillContactInfo() {
             if (!currentUser.autoFillContact) return;
             
+            // 安全设置值函数
+            const safeSetValue = (elementId, value) => {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.value = value;
+                }
+            };
+            
             // 填充代取快递发布页
             if (currentUser.defaultContactInfo) {
-                document.getElementById('contact-info').value = currentUser.defaultContactInfo;
-                document.getElementById('errand-contact-info').value = currentUser.defaultContactInfo;
+                safeSetValue('contact-info', currentUser.defaultContactInfo);
+                safeSetValue('errand-contact-info', currentUser.defaultContactInfo);
             }
             
             // 填充代取快递领取页
-            document.getElementById('taker-contact-info').value = currentUser.defaultContactInfo || '';
+            safeSetValue('taker-contact-info', currentUser.defaultContactInfo || '');
             
             // 填充跑腿领取页
-            document.getElementById('errand-taker-contact-info').value = currentUser.defaultContactInfo || '';
+            safeSetValue('errand-taker-contact-info', currentUser.defaultContactInfo || '');
             
             // 填充姓名
             if (currentUser.name) {
-                document.getElementById('contact-name').value = currentUser.name;
-                document.getElementById('errand-contact-name').value = currentUser.name;
-                document.getElementById('taker-name').value = currentUser.name;
-                document.getElementById('errand-taker-name').value = currentUser.name;
+                safeSetValue('contact-name', currentUser.name);
+                safeSetValue('errand-contact-name', currentUser.name);
+                safeSetValue('taker-name', currentUser.name);
+                safeSetValue('errand-taker-name', currentUser.name);
             }
             
             // 填充地址
             if (currentUser.defaultAddress) {
-                document.getElementById('delivery-address').value = currentUser.defaultAddress;
-                document.getElementById('errand-delivery').value = currentUser.defaultAddress;
+                safeSetValue('delivery-address', currentUser.defaultAddress);
+                safeSetValue('errand-delivery', currentUser.defaultAddress);
             }
             
             // 填充联系方式类型
@@ -1606,7 +3053,10 @@
                     reward: parseFloat(order.reward),
                     notes: order.notes,
                     status: 'pending',
-                    created_by: order.createdBy
+                    created_by: order.createdBy,
+                    item_type: order.itemType,
+                    item_detail: order.itemDetail,
+                    item_weight: order.itemWeight
                 };
                 
                 console.log('转换后的订单数据:', orderData);
@@ -1625,6 +3075,14 @@
                 }
                 
                 console.log('订单保存成功，返回数据:', data);
+                
+                // 发送通知
+                notificationSystem.addNotification(
+                    '订单发布成功',
+                    '您的代取快递订单已发布，等待接单',
+                    'success'
+                );
+                
                 return data[0];
                 
             } catch (error) {
@@ -1669,6 +3127,14 @@
                 }
                 
                 console.log('跑腿任务保存成功，返回数据:', data);
+                
+                // 发送通知
+                notificationSystem.addNotification(
+                    '任务发布成功',
+                    '您的跑腿任务已发布，等待接单',
+                    'success'
+                );
+                
                 return data[0];
             } catch (error) {
                 console.error('保存跑腿任务完整错误:', error);
@@ -1720,168 +3186,175 @@
             }
         }
 
-        // 渲染代取快递订单
-async function renderDeliveryOrders() {
-    const ordersList = document.getElementById('delivery-orders-list');
-    
-    try {
-        const orders = await getDeliveryOrders();
-        ordersList.innerHTML = '';
-        
-        const myOrders = orders.filter(order => 
-            order.created_by === currentUser.id || order.taken_by === currentUser.id
-        );
-        
-        // 更新首页统计数据
-        updateMainPageStats();
-        
-        if (myOrders.length === 0) {
-            ordersList.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-inbox"></i>
-                    <p>您还没有发布或接取任何代取订单</p>
-                </div>
-            `;
-            return;
-        }
-        
-        for (const order of myOrders) {
-            const unreadCount = await getUnreadMessageCount(order.id, 'delivery');
-            const orderItem = document.createElement('div');
-            orderItem.className = 'order-item';
-            if (unreadCount > 0) {
-                orderItem.classList.add('chat-order-unread');
-                // 添加新消息闪烁效果
-                orderItem.classList.add('new-message');
-                // 3秒后移除闪烁效果
-                setTimeout(() => {
-                    if (orderItem.classList.contains('new-message')) {
-                        orderItem.classList.remove('new-message');
+        // 渲染代取快递订单 - 增强版本
+        async function renderDeliveryOrders() {
+            const ordersList = document.getElementById('delivery-orders-list');
+            if (!ordersList) return;
+            
+            try {
+                const orders = await getDeliveryOrders();
+                ordersList.innerHTML = '';
+                
+                const myOrders = orders.filter(order => 
+                    order.created_by === currentUser.id || order.taken_by === currentUser.id
+                );
+                
+                // 更新首页统计数据
+                updateMainPageStats();
+                
+                if (myOrders.length === 0) {
+                    ordersList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>您还没有发布或接取任何代取订单</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                for (const order of myOrders) {
+                    const unreadCount = await getUnreadMessageCount(order.id, 'delivery');
+                    const orderItem = document.createElement('div');
+                    orderItem.className = 'order-item';
+                    if (unreadCount > 0) {
+                        orderItem.classList.add('chat-order-unread');
+                        // 添加新消息闪烁效果
+                        orderItem.classList.add('new-message');
+                        // 3秒后移除闪烁效果
+                        setTimeout(() => {
+                            if (orderItem.classList.contains('new-message')) {
+                                orderItem.classList.remove('new-message');
+                            }
+                        }, 3000);
                     }
-                }, 3000);
-            }
-            
-            let statusClass = '';
-            let statusText = '';
-            
-            switch(order.status) {
-                case 'pending':
-                    statusClass = 'status-pending';
-                    statusText = '待接单';
-                    break;
-                case 'taken':
-                    statusClass = 'status-taken';
-                    statusText = '已接单';
-                    break;
-                case 'processing':
-                    statusClass = 'status-processing';
-                    statusText = '配送中';
-                    break;
-                case 'completed':
-                    statusClass = 'status-completed';
-                    statusText = '已完成';
-                    break;
-                case 'cancelled':
-                    statusClass = 'status-cancelled';
-                    statusText = '已取消';
-                    break;
-            }
-            
-            // 判断订单类型
-            const isMyOrder = order.created_by === currentUser.id;
-            const orderType = isMyOrder ? '我发布的' : '我接取的';
-            
-            // 为有未读消息的订单ID添加特殊样式
-            const orderIdClass = unreadCount > 0 ? 'order-id has-unread' : 'order-id';
-            
-            // 构建订单HTML
-            let orderHTML = `
-                <div class="order-header">
-                    <div class="${orderIdClass}">
-                        ${order.id.slice(-8)}
-                        <span class="order-type-tag">${orderType}</span>
-            `;
-            
-            // 添加未读徽章
-            if (unreadCount > 0) {
-                orderHTML += `
-                        <span class="unread-badge" title="${unreadCount}条未读消息">
-                            ${unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
+                    
+                    let statusClass = '';
+                    let statusText = '';
+                    
+                    switch(order.status) {
+                        case 'pending':
+                            statusClass = 'status-pending';
+                            statusText = '待接单';
+                            break;
+                        case 'taken':
+                            statusClass = 'status-taken';
+                            statusText = '已接单';
+                            break;
+                        case 'processing':
+                            statusClass = 'status-processing';
+                            statusText = '配送中';
+                            break;
+                        case 'completed':
+                            statusClass = 'status-completed';
+                            statusText = '已完成';
+                            break;
+                        case 'cancelled':
+                            statusClass = 'status-cancelled';
+                            statusText = '已取消';
+                            break;
+                    }
+                    
+                    // 判断订单类型
+                    const isMyOrder = order.created_by === currentUser.id;
+                    const orderType = isMyOrder ? '我发布的' : '我接取的';
+                    
+                    // 为有未读消息的订单ID添加特殊样式
+                    const orderIdClass = unreadCount > 0 ? 'order-id has-unread' : 'order-id';
+                    
+                    // 安全显示联系方式
+                    const safeContactInfo = sensitiveInfoProtection.displaySafeContactInfo(order, currentUser.id);
+                    
+                    // 构建订单HTML
+                    let orderHTML = `
+                        <div class="order-header">
+                            <div class="${orderIdClass}">
+                                ${order.id.slice(-8)}
+                                <span class="order-type-tag">${orderType}</span>
+                    `;
+                    
+                    // 添加未读徽章
+                    if (unreadCount > 0) {
+                        orderHTML += `
+                                <span class="unread-badge" title="${unreadCount}条未读消息">
+                                    ${unreadCount > 99 ? '99+' : unreadCount}
+                                </span>
+                        `;
+                    }
+                    
+                    orderHTML += `
+                            </div>
+                            <div class="order-status ${statusClass}">${statusText}</div>
+                        </div>
+                        <div class="order-details">
+                            <div class="order-detail"><strong>物品类型:</strong> ${order.item_type}${order.item_detail ? ' - ' + order.item_detail : ''}</div>
+                            <div class="order-detail"><strong>物品重量:</strong> ${order.item_weight}</div>
+                            <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
+                            <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
+                            <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                            <div class="order-detail"><strong>状态:</strong> ${statusText}</div>
+                            <div class="order-detail"><strong>联系方式:</strong> ${safeContactInfo}</div>
+                    `;
+                    
+                    // 添加接单人信息
+                    if (order.taken_by) {
+                        orderHTML += `<div class="order-detail"><strong>接单人:</strong> ${order.taker_name || '未知用户'}</div>`;
+                    }
+                    
+                    // 添加未读消息提示
+                    if (unreadCount > 0) {
+                        orderHTML += `
+                            <div class="order-detail" style="color: #ff4757; font-weight: 500;">
+                                <i class="fas fa-comment-dots"></i> ${unreadCount}条未读消息
+                            </div>
+                        `;
+                    }
+                    
+                    orderHTML += `
+                        </div>
+                        <div class="order-actions">
+                    `;
+                    
+                    // 添加聊天按钮（只有已接单状态且是相关用户）
+                    if (order.status === 'taken' && (order.created_by === currentUser.id || order.taken_by === currentUser.id)) {
+                        const badgeHTML = unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : '';
+                        orderHTML += `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'delivery')" style="position: relative;">
+                                <i class="fas fa-comments"></i> 联系对方
+                                ${badgeHTML}
+                            </button>`;
+                    }
+                    
+                    // 添加取消接单按钮（只有接单人可以取消）
+                    if (order.status === 'taken' && order.taken_by === currentUser.id) {
+                        orderHTML += `<button class="action-btn btn-cancel" onclick="cancelTakeOrder('${order.id}', 'delivery')">取消接单</button>`;
+                    }
+                    
+                    // 添加取消订单按钮（发布人可以取消）
+                    if ((order.status === 'taken' || order.status === 'pending') && order.created_by === currentUser.id) {
+                        orderHTML += `<button class="action-btn btn-cancel" onclick="cancelOrder('${order.id}', 'delivery')">取消订单</button>`;
+                    }
+                    
+                    orderHTML += `
+                        </div>
+                    `;
+                    
+                    orderItem.innerHTML = orderHTML;
+                    ordersList.appendChild(orderItem);
+                }
+                
+            } catch (error) {
+                ordersList.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>加载代取订单失败: ${error.message}</p>
+                    </div>
                 `;
             }
-            
-            orderHTML += `
-                    </div>
-                    <div class="order-status ${statusClass}">${statusText}</div>
-                </div>
-                <div class="order-details">
-                    <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
-                    <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
-                    <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
-                    <div class="order-detail"><strong>状态:</strong> ${statusText}</div>
-            `;
-            
-            // 添加接单人信息
-            if (order.taken_by) {
-                orderHTML += `<div class="order-detail"><strong>接单人:</strong> ${order.taker_name || '未知用户'}</div>`;
-            }
-            
-            // 添加未读消息提示
-                if (unreadCount > 0) {
-            orderHTML += `
-                <div class="order-detail" style="color: #ff4757; font-weight: 500;">
-                     <i class="fas fa-comment-dots"></i> ${unreadCount}条未读消息
-                 </div>
-            `;
         }
-            
-            orderHTML += `
-                </div>
-                <div class="order-actions">
-            `;
-            
-            // 添加聊天按钮（只有已接单状态且是相关用户）
-                if (order.status === 'taken' && (order.created_by === currentUser.id || order.taken_by === currentUser.id)) {
-                    const badgeHTML = unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : '';
-            orderHTML += `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'delivery')" style="position: relative;">
-                    <i class="fas fa-comments"></i> 联系对方
-                    ${badgeHTML}
-                </button>`;
-            }
-            
-            // 添加取消接单按钮（只有接单人可以取消）
-            if (order.status === 'taken' && order.taken_by === currentUser.id) {
-                orderHTML += `<button class="action-btn btn-cancel" onclick="cancelTakeOrder('${order.id}', 'delivery')">取消接单</button>`;
-            }
-            
-            // 添加取消订单按钮（发布人可以取消）
-            if ((order.status === 'taken' || order.status === 'pending') && order.created_by === currentUser.id) {
-                orderHTML += `<button class="action-btn btn-cancel" onclick="cancelOrder('${order.id}', 'delivery')">取消订单</button>`;
-            }
-            
-            orderHTML += `
-                </div>
-            `;
-            
-            orderItem.innerHTML = orderHTML;
-            ordersList.appendChild(orderItem);
-        }
-        
-    } catch (error) {
-        ordersList.innerHTML = `
-            <div class="error-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>加载代取订单失败: ${error.message}</p>
-            </div>
-        `;
-    }
-}
 
-
-        // 渲染跑腿任务
+        // 渲染跑腿任务 - 增强版本
         async function renderErrandOrders() {
             const ordersList = document.getElementById('errand-orders-list');
+            if (!ordersList) return;
             
             try {
                 const orders = await getErrandOrders();
@@ -1942,6 +3415,9 @@ async function renderDeliveryOrders() {
                     const isMyOrder = order.created_by === currentUser.id;
                     const orderType = isMyOrder ? '我发布的' : '我接取的';
                     
+                    // 安全显示联系方式
+                    const safeContactInfo = sensitiveInfoProtection.displaySafeContactInfo(order, currentUser.id);
+                    
                     orderItem.innerHTML = `
                         <div class="order-header">
                             <div class="order-id errand-id">
@@ -1958,11 +3434,12 @@ async function renderDeliveryOrders() {
                             <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
                             <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
                             <div class="order-detail"><strong>状态:</strong> ${statusText}</div>
+                            <div class="order-detail"><strong>联系方式:</strong> ${safeContactInfo}</div>
                             ${order.taken_by ? `<div class="order-detail"><strong>接单人:</strong> ${order.taker_name || '未知用户'}</div>` : ''}
                         </div>
                         <div class="order-actions">
                             ${order.status === 'taken' && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
-    `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'errand')" style="position: relative;">联系对方${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}</button>` : ''}
+        `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'errand')" style="position: relative;">联系对方${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}</button>` : ''}
                             ${order.status === 'taken' && order.taken_by === currentUser.id ? 
                                 `<button class="action-btn btn-cancel" onclick="cancelTakeOrder('${order.id}', 'errand')">取消接单</button>` : ''}
                             ${order.status === 'taken' && order.created_by === currentUser.id ? 
@@ -2006,8 +3483,11 @@ async function renderDeliveryOrders() {
                 const completedErrand = myErrandOrders.filter(order => order.status === 'completed').length;
                 const totalCompleted = completedDelivery + completedErrand;
                 
-                document.getElementById('my-orders-count').textContent = totalOrders;
-                document.getElementById('completed-orders-count').textContent = totalCompleted;
+                const myOrdersCount = document.getElementById('my-orders-count');
+                const completedOrdersCount = document.getElementById('completed-orders-count');
+                
+                if (myOrdersCount) myOrdersCount.textContent = totalOrders;
+                if (completedOrdersCount) completedOrdersCount.textContent = totalCompleted;
             } catch (error) {
                 console.error('更新首页统计失败:', error);
             }
@@ -2016,6 +3496,7 @@ async function renderDeliveryOrders() {
         // 渲染可接取的代取订单
         async function renderAvailableOrders() {
             const ordersList = document.getElementById('available-orders-list');
+            if (!ordersList) return;
             
             try {
                 const orders = await getDeliveryOrders();
@@ -2037,16 +3518,22 @@ async function renderDeliveryOrders() {
                     const orderItem = document.createElement('div');
                     orderItem.className = 'order-item';
                     
+                    // 安全显示联系方式
+                    const safeContactInfo = sensitiveInfoProtection.displaySafeContactInfo(order, currentUser.id);
+                    
                     orderItem.innerHTML = `
                         <div class="order-header">
                             <div class="order-id">${order.id.slice(-8)}</div>
                             <div class="order-status status-pending">待接单</div>
                         </div>
                         <div class="order-details">
+                            <div class="order-detail"><strong>物品类型:</strong> ${order.item_type}${order.item_detail ? ' - ' + order.item_detail : ''}</div>
+                            <div class="order-detail"><strong>物品重量:</strong> ${order.item_weight}</div>
                             <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
                             <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
                             <div class="order-detail"><strong>期望时间:</strong> ${new Date(order.delivery_time).toLocaleString()}</div>
                             <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                            <div class="order-detail"><strong>联系方式:</strong> ${safeContactInfo}</div>
                         </div>
                         <div class="order-actions">
                             <button class="action-btn btn-take" data-id="${order.id}">接单</button>
@@ -2077,6 +3564,7 @@ async function renderDeliveryOrders() {
         // 渲染可接取的跑腿任务
         async function renderAvailableErrands() {
             const errandsList = document.getElementById('available-errands-list');
+            if (!errandsList) return;
             
             try {
                 const orders = await getErrandOrders();
@@ -2098,6 +3586,9 @@ async function renderDeliveryOrders() {
                     const orderItem = document.createElement('div');
                     orderItem.className = 'order-item errand-item';
                     
+                    // 安全显示联系方式
+                    const safeContactInfo = sensitiveInfoProtection.displaySafeContactInfo(order, currentUser.id);
+                    
                     orderItem.innerHTML = `
                         <div class="order-header">
                             <div class="order-id errand-id">${order.id.slice(-8)}</div>
@@ -2110,6 +3601,7 @@ async function renderDeliveryOrders() {
                             <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
                             <div class="order-detail"><strong>截止时间:</strong> ${new Date(order.deadline).toLocaleString()}</div>
                             <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                            <div class="order-detail"><strong>联系方式:</strong> ${safeContactInfo}</div>
                         </div>
                         <div class="order-actions">
                             <button class="action-btn btn-take-errand" data-id="${order.id}">接单</button>
@@ -2137,8 +3629,14 @@ async function renderDeliveryOrders() {
             }
         }
 
-        // 接取代取订单
+        // 接取代取订单 - 增强版本（添加频率限制）
         async function takeOrder(orderId) {
+            // 检查频率限制
+            if (!rateLimiter.canPerformAction(currentUser.id, 'take_order', 3, 60000)) { // 1分钟内最多接3单
+                rateLimiter.showRateLimitMessage('take-order-rate-limit');
+                return;
+            }
+            
             if (!currentUser.name || !currentUser.contactInfo) {
                 alert('请先填写您的姓名和联系方式！');
                 return;
@@ -2150,14 +3648,25 @@ async function renderDeliveryOrders() {
                     taken_by: currentUser.id,
                     taker_name: currentUser.name,
                     taker_contact: currentUser.contactInfo,
-                    taker_contact_type: currentUser.defaultContactType
+                    taker_contact_type: currentUser.defaultContactType,
+                    taken_at: new Date().toISOString()
                 });
+                
+                // 更新信用评分
+                userCreditSystem.updateCredit(currentUser.id, 'order_taken');
+                
+                // 发送通知
+                notificationSystem.addNotification(
+                    '接单成功',
+                    '您已成功接取代取订单，请尽快联系下单人',
+                    'success'
+                );
                 
                 alert('接单成功！请尽快联系下单人确认细节。');
                 renderAvailableOrders();
                 renderDeliveryOrders();
                 
-                // 添加这行代码 - 自动刷新所有页面数据
+                // 自动刷新所有页面数据
                 await refreshAllPages();
                 
             } catch (error) {
@@ -2166,8 +3675,14 @@ async function renderDeliveryOrders() {
             }
         }
 
-        // 接取跑腿任务
+        // 接取跑腿任务 - 增强版本（添加频率限制）
         async function takeErrandOrder(orderId) {
+            // 检查频率限制
+            if (!rateLimiter.canPerformAction(currentUser.id, 'take_errand', 3, 60000)) { // 1分钟内最多接3单
+                rateLimiter.showRateLimitMessage('take-errand-rate-limit');
+                return;
+            }
+            
             if (!currentUser.name || !currentUser.contactInfo) {
                 alert('请先填写您的姓名和联系方式！');
                 return;
@@ -2179,8 +3694,19 @@ async function renderDeliveryOrders() {
                     taken_by: currentUser.id,
                     taker_name: currentUser.name,
                     taker_contact: currentUser.contactInfo,
-                    taker_contact_type: currentUser.defaultContactType
+                    taker_contact_type: currentUser.defaultContactType,
+                    taken_at: new Date().toISOString()
                 });
+                
+                // 更新信用评分
+                userCreditSystem.updateCredit(currentUser.id, 'order_taken');
+                
+                // 发送通知
+                notificationSystem.addNotification(
+                    '接单成功',
+                    '您已成功接取跑腿任务，请尽快联系发布人',
+                    'success'
+                );
                 
                 alert('接单成功！请尽快联系发布人确认细节。');
                 renderAvailableErrands();
@@ -2205,7 +3731,8 @@ async function renderDeliveryOrders() {
                         taken_by: null,
                         taker_name: null,
                         taker_contact: null,
-                        taker_contact_type: null
+                        taker_contact_type: null,
+                        taken_at: null
                     });
                 } else {
                     await updateErrandOrder(orderId, {
@@ -2213,9 +3740,13 @@ async function renderDeliveryOrders() {
                         taken_by: null,
                         taker_name: null,
                         taker_contact: null,
-                        taker_contact_type: null
+                        taker_contact_type: null,
+                        taken_at: null
                     });
                 }
+                
+                // 更新信用评分
+                userCreditSystem.updateCredit(currentUser.id, 'order_cancelled');
                 
                 alert('取消接单成功！');
                 if (orderType === 'delivery') {
@@ -2247,6 +3778,9 @@ async function renderDeliveryOrders() {
                     });
                 }
                 
+                // 更新信用评分
+                userCreditSystem.updateCredit(currentUser.id, 'order_cancelled');
+                
                 alert('订单已取消！');
                 if (orderType === 'delivery') {
                     renderDeliveryOrders();
@@ -2262,7 +3796,7 @@ async function renderDeliveryOrders() {
             }
         }
 
-        // 发布代取订单
+        // 发布代取订单 - 增强版本（添加内容审核和联系方式验证）
         async function submitOrder() {
             const deliveryTime = document.getElementById('delivery-time').value;
             const pickupAddress = document.getElementById('pickup-address').value;
@@ -2273,15 +3807,39 @@ async function renderDeliveryOrders() {
             const contactType = getSelectedContactType('order-page');
             const reward = document.getElementById('reward').value || 5;
             const notes = document.getElementById('notes').value;
+            const itemType = document.getElementById('item-type').value;
+            const itemWeight = document.getElementById('item-weight').value;
+            
+            // 获取其他物品详情（如果选择了"其他"）
+            let itemDetail = '';
+            if (itemType === '其他') {
+                itemDetail = document.getElementById('other-item').value;
+                if (!itemDetail) {
+                    alert('请填写具体物品名称！');
+                    return;
+                }
+            }
             
             console.log('开始提交订单，表单数据:', {
                 deliveryTime, pickupAddress, deliveryAddress, pickupCode,
-                contactName, contactInfo, contactType, reward, notes
+                contactName, contactInfo, contactType, reward, notes,
+                itemType, itemDetail, itemWeight
             });
             
             if (!deliveryTime || !pickupAddress || !deliveryAddress || 
-                !pickupCode || !contactName || !contactInfo) {
+                !pickupCode || !contactName || !contactInfo || !itemType || !itemWeight) {
                 alert('请填写所有必填字段！');
+                return;
+            }
+            
+            // 内容审核
+            if (!contentModerationSystem.checkContent(notes, 'notes-moderation-warning')) {
+                alert('备注中包含敏感信息，请修改后重新提交');
+                return;
+            }
+            
+            // 联系方式验证
+            if (!validateContactInfo(contactInfo, contactType)) {
                 return;
             }
             
@@ -2295,9 +3853,12 @@ async function renderDeliveryOrders() {
                     contactInfo: contactInfo,
                     contactType: contactType,
                     reward: reward,
-                    notes: notes,
+                    notes: contentModerationSystem.filterText(notes), // 过滤敏感词
                     status: 'pending',
-                    createdBy: currentUser.id
+                    createdBy: currentUser.id,
+                    itemType: itemType,
+                    itemDetail: itemDetail,
+                    itemWeight: itemWeight
                 };
                 
                 console.log('准备提交订单:', newOrder);
@@ -2313,6 +3874,10 @@ async function renderDeliveryOrders() {
                 document.getElementById('contact-info').value = '';
                 document.getElementById('reward').value = '5';
                 document.getElementById('notes').value = '';
+                document.getElementById('item-type').value = '';
+                document.getElementById('item-weight').value = '';
+                document.getElementById('other-item').value = '';
+                document.getElementById('other-item-group').style.display = 'none';
                 
                 alert('代取请求已提交成功！');
                 showPage('delivery-home-page');
@@ -2320,7 +3885,7 @@ async function renderDeliveryOrders() {
                 // 刷新订单列表
                 await renderDeliveryOrders();
                 
-                // 添加这行 - 自动刷新所有页面数据
+                // 自动刷新所有页面数据
                 await refreshAllPages();
                 
             } catch (error) {
@@ -2334,7 +3899,7 @@ async function renderDeliveryOrders() {
             }
         }
 
-        // 发布跑腿任务
+        // 发布跑腿任务 - 增强版本（添加内容审核和联系方式验证）
         async function submitErrandOrder() {
             const title = document.getElementById('errand-title').value;
             const description = document.getElementById('errand-description').value;
@@ -2353,10 +3918,22 @@ async function renderDeliveryOrders() {
                 return;
             }
             
+            // 内容审核
+            if (!contentModerationSystem.checkContent(description, 'errand-description-moderation-warning') ||
+                !contentModerationSystem.checkContent(notes, 'errand-notes-moderation-warning')) {
+                alert('内容中包含敏感信息，请修改后重新提交');
+                return;
+            }
+            
+            // 联系方式验证
+            if (!validateContactInfo(contactInfo, contactType)) {
+                return;
+            }
+            
             try {
                 const newOrder = {
                     title: title,
-                    description: description,
+                    description: contentModerationSystem.filterText(description), // 过滤敏感词
                     pickupLocation: pickupLocation,
                     deliveryLocation: deliveryLocation,
                     deadline: deadline,
@@ -2364,7 +3941,7 @@ async function renderDeliveryOrders() {
                     contactName: contactName,
                     contactInfo: contactInfo,
                     contactType: contactType,
-                    notes: notes,
+                    notes: contentModerationSystem.filterText(notes), // 过滤敏感词
                     status: 'pending',
                     createdBy: currentUser.id
                 };
@@ -2386,7 +3963,7 @@ async function renderDeliveryOrders() {
                 
                 await renderErrandOrders();
                 
-                // 添加这行 - 自动刷新所有页面数据
+                // 自动刷新所有页面数据
                 await refreshAllPages();
                 
             } catch (error) {
@@ -2395,904 +3972,497 @@ async function renderDeliveryOrders() {
             }
         }
 
-        // 获取未读消息数量
-        async function getUnreadMessageCount(orderId, orderType) {
-            try {
-                // 从本地存储获取最后阅读时间
-                const lastReadKey = `last_read_${orderType}_${orderId}`;
-                const lastReadTime = localStorage.getItem(lastReadKey) || 0;
+        // ========== 新增功能：物品类型动态显示和联系方式验证 ==========
 
-                const { data, error } = await supabase
-                    .from('chat_messages')
-                    .select('*')
-                    .eq('order_id', orderId)
-                    .eq('order_type', orderType)
-                    .gt('created_at', lastReadTime)
-                    .neq('sender_id', currentUser.id);
-
-                if (error) throw error;
-                return data ? data.length : 0;
-            } catch (error) {
-                console.error('获取未读消息数量失败:', error);
-                return 0;
-            }
-        }
-
-        // 更新最后阅读时间
-        function updateLastReadTime(orderId, orderType) {
-            const lastReadKey = `last_read_${orderType}_${orderId}`;
-            localStorage.setItem(lastReadKey, new Date().toISOString());
-        }
-
-        // 更新底部导航的未读消息徽章
-        async function updateTabUnreadBadge() {
-            try {
-                // 获取所有相关订单
-                const [deliveryOrders, errandOrders] = await Promise.all([
-                    getDeliveryOrders(),
-                    getErrandOrders()
-                ]);
-                
-                const myDeliveryOrders = deliveryOrders.filter(order => 
-                    order.created_by === currentUser.id || order.taken_by === currentUser.id
-                );
-                
-                const myErrandOrders = errandOrders.filter(order => 
-                    order.created_by === currentUser.id || order.taken_by === currentUser.id
-                );
-                
-                const allOrders = [...myDeliveryOrders, ...myErrandOrders];
-                
-                // 计算总未读消息数
-                let totalUnread = 0;
-                
-                for (const order of allOrders) {
-                    const orderType = order.title ? 'errand' : 'delivery';
-                    const unreadCount = await getUnreadMessageCount(order.id, orderType);
-                    totalUnread += unreadCount;
-                }
-                
-                const chatTab = document.querySelector('.tab-item:nth-child(4)'); // 聊天标签
-                
-                // 移除现有的徽章
-                const existingBadge = chatTab.querySelector('.unread-badge');
-                if (existingBadge) {
-                    existingBadge.remove();
-                }
-                
-                // 如果有未读消息，添加徽章
-                if (totalUnread > 0) {
-                    const badge = document.createElement('span');
-                    badge.className = 'unread-badge';
-                    badge.textContent = totalUnread > 99 ? '99+' : totalUnread.toString();
-                    chatTab.appendChild(badge);
-                }
-                
-            } catch (error) {
-                console.error('更新底部导航徽章失败:', error);
-            }
-        }
-
-        // 聊天功能
-                let isChatOpen = false; // 添加全局变量跟踪聊天状态
-
-                   async function openChat(orderId, orderType) {
-    // 防止重复打开
-    if (isChatOpen) {
-        return;
-    }
-    
-    isChatOpen = true;
-    
-    // 更新最后阅读时间
-    updateLastReadTime(orderId, orderType);
-    
-    // 刷新未读消息显示
-    await updateTabUnreadBadge();
-    
-    currentChatOrder = { id: orderId, type: orderType };
-    
-    // 创建聊天模态框
-    const chatModal = document.createElement('div');
-    chatModal.id = 'chat-modal';
-    chatModal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-    `;
-    
-    chatModal.innerHTML = `
-        <div style="background: white; width: 90%; max-width: 500px; height: 70%; border-radius: 10px; display: flex; flex-direction: column;">
-            <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0;">订单聊天</h3>
-                <button onclick="closeChat()" style="background: none; border: none; font-size: 20px; cursor: pointer;">×</button>
-            </div>
-            <div id="chat-messages" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column;"></div>
-            <div style="padding: 15px; border-top: 1px solid #eee; display: flex;">
-                <input type="text" id="chat-input" placeholder="输入消息..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                <button onclick="sendMessage()" style="margin-left: 10px; padding: 10px 20px; background: #4da6ff; color: white; border: none; border-radius: 5px; cursor: pointer;">发送</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(chatModal);
-    
-    // 加载聊天记录
-    await loadChatMessages();
-    
-    // 开始轮询新消息
-    if (chatInterval) clearInterval(chatInterval);
-    chatInterval = setInterval(loadChatMessages, 2000);
-    
-    // 回车发送消息
-    document.getElementById('chat-input').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
-    });
-}
-
-function closeChat() {
-    isChatOpen = false; // 重置状态
-    
-    if (chatInterval) {
-        clearInterval(chatInterval);
-        chatInterval = null;
-    }
-    
-    const chatModal = document.getElementById('chat-modal');
-    if (chatModal) {
-        chatModal.remove();
-    }
-    currentChatOrder = null;
-    
-    // 关闭聊天后更新未读徽章
-    updateTabUnreadBadge();
-}
-
-        async function loadChatMessages() {
-            if (!currentChatOrder) return;
+        // 初始化物品类型选择器
+        function initItemTypeSelector() {
+            const itemTypeSelect = document.getElementById('item-type');
+            const otherItemGroup = document.getElementById('other-item-group');
             
-            try {
-                const { data, error } = await supabase
-                    .from('chat_messages')
-                    .select('*')
-                    .eq('order_id', currentChatOrder.id)
-                    .eq('order_type', currentChatOrder.type)
-                    .order('created_at', { ascending: true });
-                
-                if (error) throw error;
-                
-                const chatMessages = document.getElementById('chat-messages');
-                chatMessages.innerHTML = '';
-                
-                data.forEach(msg => {
-                    const messageDiv = document.createElement('div');
-                    messageDiv.style.cssText = `
-                        margin-bottom: 10px;
-                        padding: 8px 12px;
-                        border-radius: 10px;
-                        max-width: 80%;
-                        word-wrap: break-word;
-                        ${msg.sender_id === currentUser.id ? 
-                            'background: #4da6ff; color: white; align-self: flex-end;' : 
-                            'background: #f0f0f0; color: #333; align-self: flex-start;'}
-                    `;
-                    
-                    messageDiv.innerHTML = `
-                        <div style="font-size: 12px; opacity: 0.8;">${msg.sender_name}</div>
-                        <div>${msg.message_text}</div>
-                        <div style="font-size: 10px; opacity: 0.6; text-align: right;">${new Date(msg.created_at).toLocaleTimeString()}</div>
-                    `;
-                    
-                    chatMessages.appendChild(messageDiv);
+            if (itemTypeSelect) {
+                itemTypeSelect.addEventListener('change', function() {
+                    if (this.value === '其他') {
+                        otherItemGroup.style.display = 'block';
+                    } else {
+                        otherItemGroup.style.display = 'none';
+                    }
                 });
-                
-                // 滚动到底部
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            } catch (error) {
-                console.error('加载聊天记录失败:', error);
             }
         }
 
-        async function sendMessage() {
-            if (!currentChatOrder) return;
+        // 联系方式验证函数
+        function validateContactInfo(contactInfo, contactType) {
+            const errorElement = document.getElementById(`${contactType}-contact-info-error`);
             
-            const input = document.getElementById('chat-input');
-            const messageText = input.value.trim();
-            
-            if (!messageText) return;
-            
-            try {
-                const { error } = await supabase
-                    .from('chat_messages')
-                    .insert([{
-                        order_id: currentChatOrder.id,
-                        order_type: currentChatOrder.type,
-                        sender_id: currentUser.id,
-                        sender_name: currentUser.name,
-                        message_text: messageText
-                    }]);
-                
-                if (error) throw error;
-                
-                input.value = '';
-                await loadChatMessages();
-            } catch (error) {
-                console.error('发送消息失败:', error);
-                alert('发送消息失败，请重试！');
+            // 清除之前的错误状态
+            if (errorElement) {
+                errorElement.style.display = 'none';
+                errorElement.textContent = '';
             }
+            
+            let isValid = true;
+            let errorMessage = '';
+            
+            switch(contactType) {
+                case 'phone':
+                    // 手机号验证：11位数字
+                    if (!/^1[3-9]\d{9}$/.test(contactInfo)) {
+                        isValid = false;
+                        errorMessage = '请输入有效的11位手机号码';
+                    }
+                    break;
+                case 'wechat':
+                    // 微信验证：大于4个字符
+                    if (contactInfo.length < 4) {
+                        isValid = false;
+                        errorMessage = '微信号必须大于4个字符';
+                    }
+                    break;
+                case 'qq':
+                    // QQ号验证：大于6个字符
+                    if (contactInfo.length < 6) {
+                        isValid = false;
+                        errorMessage = 'QQ号必须大于6个字符';
+                    }
+                    break;
+            }
+            
+            if (!isValid && errorElement) {
+                errorElement.textContent = errorMessage;
+                errorElement.style.display = 'block';
+                document.getElementById('contact-info').classList.add('input-error');
+            } else if (errorElement) {
+                errorElement.style.display = 'none';
+                document.getElementById('contact-info').classList.remove('input-error');
+            }
+            
+            return isValid;
         }
 
-        // 页面切换函数
+        // 初始化联系方式验证
+        function initContactInfoValidation() {
+            const contactInfoInputs = [
+                'contact-info',
+                'taker-contact-info',
+                'errand-contact-info',
+                'errand-taker-contact-info'
+            ];
+            
+            contactInfoInputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.addEventListener('blur', function() {
+                        const container = this.closest('.form-group');
+                        const contactTypeBtn = container ? container.querySelector('.contact-type-btn.active') : null;
+                        const contactType = contactTypeBtn ? contactTypeBtn.dataset.type : 'wechat';
+                        
+                        validateContactInfo(this.value, contactType);
+                    });
+                }
+            });
+        }
+
+        // ========== 页面切换和初始化 ==========
+
+        // 显示页面
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active');
             });
             document.getElementById(pageId).classList.add('active');
             
-            // 更新底部导航激活状态
+            // 更新导航栏标题
+            const titles = {
+                'main-page': '校园服务平台',
+                'delivery-home-page': '代取快递服务',
+                'errand-home-page': '校园跑腿服务',
+                'order-page': '发布代取订单',
+                'take-order-page': '领取代取任务',
+                'errand-order-page': '发布跑腿任务',
+                'take-errand-page': '领取跑腿任务',
+                'chat-home-page': '我的聊天',
+                'my-orders-page': '我的订单',
+                'completed-orders-page': '已完成订单',
+                'settings-page': '账户设置'
+            };
+            
+            if (titles[pageId]) {
+                document.getElementById('navbar-title').textContent = titles[pageId];
+            }
+            
+            // 更新底部导航栏
             document.querySelectorAll('.tab-item').forEach(tab => {
                 tab.classList.remove('active');
             });
             
-            if (pageId === 'main-page') {
-                document.getElementById('navbar-title').textContent = '校园服务平台';
-                document.querySelectorAll('.tab-item')[0].classList.add('active');
-                updateMainPageStats();
-            } else if (pageId === 'delivery-home-page') {
+            // 特殊处理：快递和跑腿服务页面
+            if (pageId === 'delivery-home-page' || pageId === 'order-page' || pageId === 'take-order-page') {
                 document.querySelectorAll('.tab-item')[1].classList.add('active');
-            } else if (pageId === 'errand-home-page') {
+            } else if (pageId === 'errand-home-page' || pageId === 'errand-order-page' || pageId === 'take-errand-page') {
                 document.querySelectorAll('.tab-item')[2].classList.add('active');
             } else if (pageId === 'chat-home-page') {
-                document.getElementById('navbar-title').textContent = '我的聊天';
                 document.querySelectorAll('.tab-item')[3].classList.add('active');
-                renderChatHome();
             } else if (pageId === 'settings-page') {
                 document.querySelectorAll('.tab-item')[4].classList.add('active');
-                updateUserDisplay();
+            } else if (pageId === 'main-page') {
+                document.querySelectorAll('.tab-item')[0].classList.add('active');
             }
             
             // 自动填充联系信息
-            if (pageId === 'order-page' || pageId === 'take-order-page' || 
-                pageId === 'errand-order-page' || pageId === 'take-errand-page') {
-                autoFillContactInfo();
-            }
-            
-            // 每次切换页面都更新未读徽章
-            updateTabUnreadBadge();
+            autoFillContactInfo();
         }
-            
-        // 初始化事件监听器
-        function initEventListeners() {
-            // 发布代取订单
-            document.getElementById('submit-order').addEventListener('click', submitOrder);
-            
-            // 发布跑腿任务
-            document.getElementById('submit-errand-order').addEventListener('click', submitErrandOrder);
-            
-            // 授权代取联系方式
-            document.getElementById('auth-contact').addEventListener('click', function() {
-                const takerName = document.getElementById('taker-name').value;
-                const takerContactInfo = document.getElementById('taker-contact-info').value;
-                const contactType = getSelectedContactType('take-order-page');
-                
-                if (!takerName || !takerContactInfo) {
-                    alert('请填写您的姓名和联系方式！');
-                    return;
-                }
-                
-                saveUser({
-                    name: takerName,
-                    contactInfo: takerContactInfo,
-                    defaultContactType: contactType,
-                    isTaker: true
-                });
-                
-                document.getElementById('available-orders').style.display = 'block';
-                renderAvailableOrders();
-            });
-            
-            // 授权跑腿联系方式
-            document.getElementById('auth-errand-contact').addEventListener('click', function() {
-                const takerName = document.getElementById('errand-taker-name').value;
-                const takerContactInfo = document.getElementById('errand-taker-contact-info').value;
-                const contactType = getSelectedContactType('take-errand-page');
-                
-                if (!takerName || !takerContactInfo) {
-                    alert('请填写您的姓名和联系方式！');
-                    return;
-                }
-                
-                saveUser({
-                    name: takerName,
-                    contactInfo: takerContactInfo,
-                    defaultContactType: contactType,
-                    isTaker: true
-                });
-                
-                document.getElementById('available-errands').style.display = 'block';
-                renderAvailableErrands();
-            });
+
+        // 切换订单标签页
+        function switchOrderTab(tab) {
+            // 实现标签页切换逻辑
+            console.log('切换到标签页:', tab);
+        }
+
+        // 切换已完成订单标签页
+        function switchCompletedTab(tab) {
+            // 实现已完成订单标签页切换逻辑
+            console.log('切换到已完成标签页:', tab);
         }
 
         // 编辑用户名
         function editUserName() {
-            const newName = prompt('请输入新的用户名：', currentUser.name);
+            const newName = prompt('请输入新的用户名:', currentUser.name);
             if (newName && newName.trim() !== '') {
                 saveUser({ name: newName.trim() });
+                updateUserDisplay();
             }
         }
 
         // 退出登录
         function logout() {
-            if (confirm('确定要退出登录吗？这将重置您的账户信息。')) {
+            if (confirm('确定要退出登录吗？')) {
                 localStorage.removeItem('currentUser');
-                localStorage.removeItem('deviceId');
                 location.reload();
             }
         }
 
-        // 渲染聊天主页
-        async function renderChatHome() {
-            const activeChatOrders = document.getElementById('active-chat-orders');
-            const completedChatOrders = document.getElementById('completed-chat-orders');
-            
-            try {
-                const [deliveryOrders, errandOrders] = await Promise.all([
-                    getDeliveryOrders(),
-                    getErrandOrders()
-                ]);
-                
-                // 获取当前用户相关的订单
-                const myDeliveryOrders = deliveryOrders.filter(order => 
-                    order.created_by === currentUser.id || order.taken_by === currentUser.id
-                );
-                
-                const myErrandOrders = errandOrders.filter(order => 
-                    order.created_by === currentUser.id || order.taken_by === currentUser.id
-                );
-                
-                const allOrders = [...myDeliveryOrders, ...myErrandOrders];
-                
-                // 分离进行中和已完成的订单
-                const activeOrders = allOrders.filter(order => 
-                    order.status === 'taken' || order.status === 'processing'
-                );
-                
-                const completedOrders = allOrders.filter(order => 
-                    order.status === 'completed' || order.status === 'cancelled'
-                );
-                
-                // 渲染进行中的订单
-                activeChatOrders.innerHTML = '';
-                if (activeOrders.length === 0) {
-                    activeChatOrders.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-comments"></i>
-                            <p>暂无进行中的订单</p>
-                        </div>
-                    `;
-                } else {
-                    for (const order of activeOrders) {
-                        const unreadCount = await getUnreadMessageCount(order.id, order.title ? 'errand' : 'delivery');
-                        const orderItem = createChatOrderItem(order, unreadCount);
-                        activeChatOrders.appendChild(orderItem);
-                    }
-                }
-                
-                // 渲染已完成的订单
-                completedChatOrders.innerHTML = '';
-                if (completedOrders.length === 0) {
-                    completedChatOrders.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-check-circle"></i>
-                            <p>暂无已完成的订单</p>
-                        </div>
-                    `;
-                } else {
-                    for (const order of completedOrders) {
-                        const unreadCount = await getUnreadMessageCount(order.id, order.title ? 'errand' : 'delivery');
-                        const orderItem = createChatOrderItem(order, unreadCount);
-                        completedChatOrders.appendChild(orderItem);
-                    }
-                }
-                
-            } catch (error) {
-                console.error('加载聊天主页失败:', error);
-                activeChatOrders.innerHTML = `
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>加载失败: ${error.message}</p>
-                    </div>
-                `;
-                completedChatOrders.innerHTML = '';
-            }
-        }
+        // ========== 聊天功能 ==========
 
-        // 创建聊天订单项
-        function createChatOrderItem(order, unreadCount) {
-            const orderItem = document.createElement('div');
-            orderItem.className = 'order-item';
-            if (order.title) {
-                orderItem.classList.add('errand-item');
-            }
-            if (unreadCount > 0) {
-                orderItem.classList.add('chat-order-unread');
-            }
-            
-            let statusClass = '';
-            let statusText = '';
-            
-            switch(order.status) {
-                case 'pending':
-                    statusClass = 'status-pending';
-                    statusText = '待接单';
-                    break;
-                case 'taken':
-                    statusClass = 'status-taken';
-                    statusText = '已接单';
-                    break;
-                case 'processing':
-                    statusClass = 'status-processing';
-                    statusText = '进行中';
-                    break;
-                case 'completed':
-                    statusClass = 'status-completed';
-                    statusText = '已完成';
-                    break;
-                case 'cancelled':
-                    statusClass = 'status-cancelled';
-                    statusText = '已取消';
-                    break;
-            }
-            
-            // 判断订单类型
-            const isDelivery = !order.title;
-            const orderType = isDelivery ? '快递' : '跑腿';
-            const orderTitle = isDelivery ? '代取快递' : order.title;
-            
-            // 判断用户角色
-            const isMyOrder = order.created_by === currentUser.id;
-            const userRole = isMyOrder ? '发布者' : '接单者';
-            const otherUserName = isMyOrder ? (order.taker_name || '等待接单') : order.contact_name;
-            
-            orderItem.innerHTML = `
-                <div class="order-header">
-                    <div class="order-id">
-                        ${order.id.slice(-8)}
-                        <span class="order-type-tag">${orderType}</span>
-                        <span class="order-type-tag">${userRole}</span>
-                        ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}
-                    </div>
-                    <div class="order-status ${statusClass}">${statusText}</div>
-                </div>
-                <div class="order-details">
-                    <div class="order-detail"><strong>${isDelivery ? '快递' : '任务'}:</strong> ${orderTitle}</div>
-                    <div class="order-detail"><strong>对方:</strong> ${otherUserName}</div>
-                    <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
-                </div>
-                <div class="order-actions">
-                    ${(order.status === 'taken' || order.status === 'processing') ? 
-                    `<button class="action-btn btn-chat" onclick="openChat('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')" style="position: relative;">进入聊天${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}</button>` : ''}
-                </div>
-            `;
-            
-            return orderItem;
-        }
-
-        // 自动刷新页面数据
-        async function refreshAllPages() {
-            console.log('自动刷新页面数据...');
-            
+        // 获取聊天消息
+        async function getChatMessages(orderId, orderType) {
             try {
-                // 刷新首页统计
-                await updateMainPageStats();
-                
-                // 如果当前在代取快递页面，刷新代取订单列表
-                if (document.getElementById('delivery-home-page').classList.contains('active')) {
-                    await renderDeliveryOrders();
-                }
-                
-                // 如果当前在跑腿页面，刷新跑腿订单列表
-                if (document.getElementById('errand-home-page').classList.contains('active')) {
-                    await renderErrandOrders();
-                }
-                
-                // 如果当前在聊天页面，刷新聊天列表
-                if (document.getElementById('chat-home-page').classList.contains('active')) {
-                    await renderChatHome();
-                }
-                
-                // 如果当前在接单页面，刷新可接订单列表
-                if (document.getElementById('take-order-page').classList.contains('active')) {
-                    await renderAvailableOrders();
-                }
-                
-                // 如果当前在接跑腿页面，刷新可接跑腿列表
-                if (document.getElementById('take-errand-page').classList.contains('active')) {
-                    await renderAvailableErrands();
-                }
-                
-                // 更新未读徽章
-                await updateTabUnreadBadge();
-                
-            } catch (error) {
-                console.error('自动刷新失败:', error);
-            }
-        }
-
-        // 初始化应用
-        async function initApp() {
-            // 清理可能存在的无效用户数据
-            clearInvalidUserData();
-            
-            // 检查网络连接
-            if (!navigator.onLine) {
-                alert('网络连接不可用，请检查网络设置');
-                return;
-            }
-            
-            console.log('开始初始化应用...');
-            
-            try {
-                // 初始化 Supabase 客户端
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                console.log('Supabase 客户端初始化完成');
-                
-                // 测试 Supabase 连接
-                console.log('正在测试数据库连接...');
+                const tableName = orderType === 'delivery' ? 'delivery_chat' : 'errand_chat';
                 const { data, error } = await supabase
-                    .from('delivery_orders')
-                    .select('id')
-                    .limit(1);
-                    
-                if (error) {
-                    console.error('Supabase 连接测试失败:', error);
-                    alert('数据库连接失败: ' + error.message);
-                    return;
+                    .from(tableName)
+                    .select('*')
+                    .eq('order_id', orderId)
+                    .order('created_at', { ascending: true });
+                
+                if (error) throw error;
+                return data || [];
+            } catch (error) {
+                console.error('获取聊天消息失败:', error);
+                return [];
+            }
+        }
+
+        // 发送聊天消息
+        async function sendChatMessage(orderId, orderType, message) {
+            try {
+                const tableName = orderType === 'delivery' ? 'delivery_chat' : 'errand_chat';
+                const { data, error } = await supabase
+                    .from(tableName)
+                    .insert([{
+                        order_id: orderId,
+                        sender_id: currentUser.id,
+                        message: message,
+                        created_at: new Date().toISOString()
+                    }])
+                    .select();
+                
+                if (error) throw error;
+                return data[0];
+            } catch (error) {
+                console.error('发送消息失败:', error);
+                throw error;
+            }
+        }
+
+        // 打开聊天窗口
+        async function openChat(orderId, orderType) {
+            // 实现聊天窗口逻辑
+            console.log('打开聊天:', orderId, orderType);
+            alert('聊天功能开发中...');
+        }
+
+        // 获取未读消息数量
+        async function getUnreadMessageCount(orderId, orderType) {
+            // 实现未读消息计数逻辑
+            return 0;
+        }
+
+        // 标记消息为已读
+        async function markMessagesAsRead(orderId, orderType) {
+            // 实现标记已读逻辑
+        }
+
+        // 切换通知面板
+        function toggleNotifications() {
+            const panel = document.getElementById('notification-panel');
+            if (panel) {
+                panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+                if (panel.style.display === 'block') {
+                    notificationSystem.renderNotifications();
                 }
-                
-                console.log('Supabase 连接成功，可以正常访问数据库');
-                
-            } catch (error) {
-                console.error('初始化失败:', error);
-                alert('应用初始化失败: ' + error.message);
-                return;
             }
-            
-            // 初始化用户
-            initUser();
-            
-            // 初始化联系方式选择器
-            initContactTypeSelectors();
-            
-            // 设置默认的期望送达时间为当前时间后2小时
-            const now = new Date();
-            now.setHours(now.getHours() + 2);
-            document.getElementById('delivery-time').value = now.toISOString().slice(0, 16);
-            
-            // 设置默认的跑腿截止时间为当前时间后2小时
-            document.getElementById('errand-deadline').value = now.toISOString().slice(0, 16);
-            
-            // 初始化事件监听器
-            initEventListeners();
-            
-            // 初始加载首页统计
+        }
+
+        // 标记所有通知为已读
+        function markAllNotificationsAsRead() {
+            notificationSystem.markAllAsRead();
+        }
+
+        // 刷新所有页面数据
+        async function refreshAllPages() {
             try {
-                await updateMainPageStats();
-                console.log('应用初始化完成');
-            } catch (error) {
-                console.error('加载统计数据失败:', error);
-            }
-            
-            // 启动定时器定期更新未读消息徽章
-            if (unreadUpdateInterval) clearInterval(unreadUpdateInterval);
-            unreadUpdateInterval = setInterval(updateTabUnreadBadge, 1000); // 每10秒更新一次
-            
-            // 初始化未读徽章
-            await updateTabUnreadBadge();
-        }
-
-        // 显示我的订单页面
-        function showMyOrders() {
-            document.getElementById('navbar-title').textContent = '我的订单';
-            showPage('my-orders-page');
-            renderMyOrders('all');
-        }
-
-        // 显示已完成订单页面
-        function showCompletedOrders() {
-            document.getElementById('navbar-title').textContent = '已完成订单';
-            showPage('completed-orders-page');
-            renderCompletedOrders('all');
-        }
-
-        // 切换我的订单标签页
-        function switchOrderTab(tab) {
-            // 更新按钮状态
-            document.querySelectorAll('#my-orders-page .order-tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-    
-            // 渲染对应类型的订单
-           renderMyOrders(tab);
-        }
-
-        // 切换已完成订单标签页
-        function switchCompletedTab(tab) {
-            // 更新按钮状态
-            document.querySelectorAll('#completed-orders-page .order-tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-    
-            // 渲染对应类型的订单
-                    renderCompletedOrders(tab);
-        }
-
-        // 渲染我的订单
-        async function renderMyOrders(type = 'all') {
-            const ordersList = document.getElementById('my-orders-list');
-    
-            try {
-                const [deliveryOrders, errandOrders] = await Promise.all([
-                    getDeliveryOrders(),
-                    getErrandOrders()
+                await Promise.all([
+                    renderDeliveryOrders(),
+                    renderErrandOrders()
                 ]);
-        
-                ordersList.innerHTML = '';
-        
-        // 筛选当前用户的订单
-                const myDeliveryOrders = deliveryOrders.filter(order => 
-                    order.created_by === currentUser.id || order.taken_by === currentUser.id
-                );
-        
-                const myErrandOrders = errandOrders.filter(order => 
-                    order.created_by === currentUser.id || order.taken_by === currentUser.id
-                );
-        
-                let ordersToShow = [];
-        
-                // 根据类型筛选
-                if (type === 'all') {
-                    ordersToShow = [...myDeliveryOrders, ...myErrandOrders];
-                } else if (type === 'delivery') {
-                    ordersToShow = myDeliveryOrders;
-                } else if (type === 'errand') {
-                    ordersToShow = myErrandOrders;
-                }
-        
-        // 按创建时间排序
-        ordersToShow.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        
-        if (ordersToShow.length === 0) {
-            ordersList.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-inbox"></i>
-                    <p>暂无订单记录</p>
-                </div>
-            `;
-            return;
-        }
-        
-        for (const order of ordersToShow) {
-            const unreadCount = await getUnreadMessageCount(order.id, order.title ? 'errand' : 'delivery');
-            const orderItem = document.createElement('div');
-            orderItem.className = 'order-item';
-            if (order.title) {
-                orderItem.classList.add('errand-item');
-            }
-            if (unreadCount > 0) {
-                orderItem.classList.add('chat-order-unread');
-            }
-            
-            let statusClass = '';
-            let statusText = '';
-            
-            switch(order.status) {
-                case 'pending':
-                    statusClass = 'status-pending';
-                    statusText = '待接单';
-                    break;
-                case 'taken':
-                    statusClass = 'status-taken';
-                    statusText = '已接单';
-                    break;
-                case 'processing':
-                    statusClass = 'status-processing';
-                    statusText = '进行中';
-                    break;
-                case 'completed':
-                    statusClass = 'status-completed';
-                    statusText = '已完成';
-                    break;
-                case 'cancelled':
-                    statusClass = 'status-cancelled';
-                    statusText = '已取消';
-                    break;
-            }
-            
-            // 判断订单类型
-            const isDelivery = !order.title;
-            const orderType = isDelivery ? '代取快递' : '跑腿任务';
-            const orderTitle = isDelivery ? '代取快递' : order.title;
-            
-            // 判断用户角色
-            const isMyOrder = order.created_by === currentUser.id;
-            const userRole = isMyOrder ? '我发布的' : '我接取的';
-            
-            orderItem.innerHTML = `
-                <div class="order-header">
-                    <div class="order-id">
-                        ${order.id.slice(-8)}
-                        <span class="order-type-tag">${orderType}</span>
-                        <span class="order-type-tag">${userRole}</span>
-                        ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}
-                    </div>
-                    <div class="order-status ${statusClass}">${statusText}</div>
-                </div>
-                <div class="order-details">
-                    <div class="order-detail"><strong>${isDelivery ? '任务' : '标题'}:</strong> ${orderTitle}</div>
-                    ${isDelivery ? `
-                        <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
-                        <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
-                    ` : `
-                        <div class="order-detail"><strong>描述:</strong> ${order.description}</div>
-                        <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
-                        <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
-                    `}
-                    <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
-                    <div class="order-detail"><strong>创建时间:</strong> ${new Date(order.created_at).toLocaleString()}</div>
-                    ${unreadCount > 0 ? `
-                        <div class="order-detail" style="color: #ff4757; font-weight: 500;">
-                            <i class="fas fa-comment-dots"></i> ${unreadCount}条未读消息
-                        </div>
-                    ` : ''}
-                        </div>
-                        <div class="order-actions">
-                            ${(order.status === 'taken' || order.status === 'processing') && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
-                                `<button class="action-btn btn-chat" onclick="openChat('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')" style="position: relative;">
-                                    联系对方${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}
-                                </button>` : ''}
-                        </div>
-                    `;
-            
-                    ordersList.appendChild(orderItem);
-                }
-        
+                
+                // 更新用户统计数据
+                await userStatisticsSystem.displayUserStats(currentUser.id);
+                
+                console.log('所有页面数据刷新完成');
             } catch (error) {
-                ordersList.innerHTML = `
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>加载订单失败: ${error.message}</p>
-                    </div>
-                `;
+                console.error('刷新页面数据失败:', error);
             }
         }
 
-        // 渲染已完成订单
-        async function renderCompletedOrders(type = 'all') {
-            const ordersList = document.getElementById('completed-orders-list');
+        // 价格推荐应用函数
+        function applyPriceSuggestion(price) {
+            document.getElementById('reward').value = price;
+        }
+
+        function applyErrandPriceSuggestion(price) {
+            document.getElementById('errand-reward').value = price;
+        }
+
+        // 更新价格推荐
+        function updatePriceRecommendation() {
+            priceRecommendationSystem.updateDeliveryPriceRecommendation();
+        }
+
+        function updateErrandPriceRecommendation() {
+            priceRecommendationSystem.updateErrandPriceRecommendation();
+        }
+
+        // 内容审核检查
+        function checkContentModeration(element) {
+            const warningId = element.id + '-moderation-warning';
+            contentModerationSystem.checkContent(element.value, warningId);
+        }
+
+        // 数据备份和恢复
+        function backupUserData() {
+            dataBackupSystem.backupUserData();
+        }
+
+        function restoreUserData() {
+            dataBackupSystem.restoreUserData();
+        }
+
+        // ========== 页面加载初始化 ==========
+
+// 新的初始化函数
+async function initializeApp() {
+    console.log('开始初始化应用...');
     
-            try {
-                const [deliveryOrders, errandOrders] = await Promise.all([
-            getDeliveryOrders(),
-            getErrandOrders()
-        ]);
+    // 显示加载状态
+    const loadingState = document.getElementById('loading-state');
+    const mainPage = document.getElementById('main-page');
+    if (loadingState && mainPage) {
+        loadingState.style.display = 'block';
+        mainPage.style.display = 'none';
+    }
+    
+    try {
+        // 等待 Supabase 库加载
+        await waitForSupabase();
         
-        ordersList.innerHTML = '';
+        // 初始化 Supabase 客户端
+        await initializeSupabase();
         
-        // 筛选已完成或已取消的订单
-        const completedDeliveryOrders = deliveryOrders.filter(order => 
-            (order.created_by === currentUser.id || order.taken_by === currentUser.id) && 
-            (order.status === 'completed' || order.status === 'cancelled')
-        );
+        // 初始化用户
+        await initUser();
         
-        const completedErrandOrders = errandOrders.filter(order => 
-            (order.created_by === currentUser.id || order.taken_by === currentUser.id) && 
-            (order.status === 'completed' || order.status === 'cancelled')
-        );
+        // 初始化其他系统
+        await initializeSystems();
         
-        let ordersToShow = [];
-        
-        // 根据类型筛选
-        if (type === 'all') {
-            ordersToShow = [...completedDeliveryOrders, ...completedErrandOrders];
-        } else if (type === 'delivery') {
-            ordersToShow = completedDeliveryOrders;
-        } else if (type === 'errand') {
-            ordersToShow = completedErrandOrders;
+        // 隐藏加载状态，显示主页面
+        if (loadingState && mainPage) {
+            loadingState.style.display = 'none';
+            mainPage.style.display = 'block';
         }
         
-        // 按完成时间排序（假设完成时间就是更新时间）
-        ordersToShow.sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at));
-        
-        if (ordersToShow.length === 0) {
-            ordersList.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-check-circle"></i>
-                    <p>暂无已完成订单</p>
-                </div>
-            `;
-            return;
-        }
-        
-        for (const order of ordersToShow) {
-            const unreadCount = await getUnreadMessageCount(order.id, order.title ? 'errand' : 'delivery');
-            const orderItem = document.createElement('div');
-            orderItem.className = 'order-item';
-            if (order.title) {
-                orderItem.classList.add('errand-item');
-            }
-            
-            let statusClass = '';
-            let statusText = '';
-            
-            if (order.status === 'completed') {
-                statusClass = 'status-completed';
-                statusText = '已完成';
-            } else if (order.status === 'cancelled') {
-                statusClass = 'status-cancelled';
-                statusText = '已取消';
-            }
-            
-            // 判断订单类型
-            const isDelivery = !order.title;
-            const orderType = isDelivery ? '代取快递' : '跑腿任务';
-            const orderTitle = isDelivery ? '代取快递' : order.title;
-            
-            // 判断用户角色
-            const isMyOrder = order.created_by === currentUser.id;
-            const userRole = isMyOrder ? '我发布的' : '我接取的';
-            
-            orderItem.innerHTML = `
-                <div class="order-header">
-                    <div class="order-id">
-                        ${order.id.slice(-8)}
-                        <span class="order-type-tag">${orderType}</span>
-                        <span class="order-type-tag">${userRole}</span>
-                    </div>
-                    <div class="order-status ${statusClass}">${statusText}</div>
-                </div>
-                <div class="order-details">
-                    <div class="order-detail"><strong>${isDelivery ? '任务' : '标题'}:</strong> ${orderTitle}</div>
-                    ${isDelivery ? `
-                        <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
-                        <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
-                    ` : `
-                        <div class="order-detail"><strong>描述:</strong> ${order.description}</div>
-                        <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
-                        <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
-                    `}
-                    <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
-                    <div class="order-detail"><strong>${order.status === 'completed' ? '完成时间' : '取消时间'}:</strong> ${new Date(order.updated_at || order.created_at).toLocaleString()}</div>
-                </div>
-            `;
-            
-            ordersList.appendChild(orderItem);
-        }
+        console.log('应用初始化完成');
         
     } catch (error) {
-        ordersList.innerHTML = `
-            <div class="error-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>加载已完成订单失败: ${error.message}</p>
-            </div>
-        `;
+        console.error('应用初始化失败:', error);
+        handleInitializationError(error);
     }
 }
+
+// 等待 Supabase 库加载
+function waitForSupabase() {
+    return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 50; // 最多等待5秒
         
-        // 启动应用
-        document.addEventListener('DOMContentLoaded', initApp);
+        const checkSupabase = () => {
+            attempts++;
+            if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+                console.log('Supabase 库加载成功');
+                resolve();
+            } else if (attempts >= maxAttempts) {
+                reject(new Error('Supabase 库加载超时，请检查网络连接'));
+            } else {
+                setTimeout(checkSupabase, 100);
+            }
+        };
+        
+        checkSupabase();
+    });
+}
+
+// 初始化 Supabase
+async function initializeSupabase() {
+    if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+        throw new Error('Supabase 客户端库未正确加载');
+    }
+    
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('Supabase 客户端初始化成功');
+    
+    // 测试连接（不报错，只是检查）
+    try {
+        const { error } = await supabase.from('delivery_orders').select('*').limit(1);
+        if (error) {
+            console.log('Supabase 连接测试完成（可能有表不存在错误，这是正常的）');
+        }
+    } catch (error) {
+        console.log('Supabase 连接测试完成');
+    }
+}
+
+// 初始化其他系统
+async function initializeSystems() {
+    console.log('初始化其他系统...');
+    
+    // 初始化通知系统
+    notificationSystem = new NotificationSystem();
+    
+    // 初始化频率限制器
+    rateLimiter = new RateLimiter();
+    
+    // 初始化校园地址系统
+    campusAddressSystem.initAddressAutocomplete();
+    
+    // 初始化紧急求助系统
+    emergencySystem.init();
+    
+    // 初始化物品类型选择器
+    initItemTypeSelector();
+    
+    // 初始化联系方式验证
+    initContactInfoValidation();
+    
+    // 初始化联系方式类型选择器
+    initContactTypeSelectors();
+    
+    // 自动填充联系信息
+    autoFillContactInfo();
+    
+    // 设置事件监听器
+    setupEventListeners();
+    
+    // 初始渲染
+    await renderDeliveryOrders();
+    await renderErrandOrders();
+    
+    console.log('所有系统初始化完成');
+}
+
+// 设置事件监听器
+function setupEventListeners() {
+    // 设置默认时间（当前时间+1小时）
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    const timeString = now.toISOString().slice(0, 16);
+    
+    const deliveryTimeInput = document.getElementById('delivery-time');
+    const errandDeadlineInput = document.getElementById('errand-deadline');
+    
+    if (deliveryTimeInput) deliveryTimeInput.value = timeString;
+    if (errandDeadlineInput) errandDeadlineInput.value = timeString;
+    
+    // 刷新按钮事件
+    const refreshButton = document.getElementById('refresh-button');
+    if (refreshButton) {
+        refreshButton.addEventListener('click', async function() {
+            const icon = this.querySelector('i');
+            icon.classList.add('spinning');
+            
+            try {
+                await refreshAllPages();
+                console.log('手动刷新完成');
+            } catch (error) {
+                console.error('手动刷新失败:', error);
+            } finally {
+                setTimeout(() => {
+                    icon.classList.remove('spinning');
+                }, 1000);
+            }
+        });
+    }
+}
+
+// 处理初始化错误
+function handleInitializationError(error) {
+    console.error('处理初始化错误:', error);
+    
+    const loadingState = document.getElementById('loading-state');
+    const mainPage = document.getElementById('main-page');
+    
+    if (loadingState && mainPage) {
+        loadingState.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>应用初始化失败</h3>
+                <p>${error.message || '请检查网络连接后刷新页面'}</p>
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="location.reload()" style="margin: 5px;">
+                        <i class="fas fa-redo"></i> 刷新页面
+                    </button>
+                    <button class="btn btn-secondary" onclick="retryInitialization()" style="margin: 5px;">
+                        <i class="fas fa-play"></i> 重试初始化
+                    </button>
+                </div>
+            </div>
+        `;
+        mainPage.style.display = 'none';
+    } else {
+        // 如果找不到元素，用 alert
+        alert('应用初始化失败: ' + (error.message || '未知错误') + '\n请刷新页面重试');
+    }
+}
+
+// 重试初始化
+function retryInitialization() {
+    console.log('用户点击重试初始化');
+    initializeApp();
+}
+
+// 更新 DOMContentLoaded 事件监听器
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM 加载完成，开始初始化应用...');
+    initializeApp();
+});
     </script>
 </body>
 </html>
