@@ -2352,7 +2352,7 @@ async function renderErrandOrders() {
                     ${order.status === 'delivered' && order.created_by === currentUser.id ? 
                         `<button class="action-btn btn-confirm" onclick="confirmCompletion('${order.id}', 'errand')">确认完成</button>` : ''}
                     
-                    ${order.status === 'completed' && !hasRated ? 
+                    ${order.status === 'completed' ? 
                         `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', 'errand')">评价</button>` : ''}
                     
                     ${order.status === 'taken' && order.taken_by === currentUser.id ? 
@@ -3822,10 +3822,7 @@ function closeChat() {
                             ${order.status === 'delivered' && order.created_by === currentUser.id ? 
                                 `<button class="action-btn btn-confirm" onclick="confirmCompletion('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">确认完成</button>` : ''}
                             ${order.status === 'completed' ? 
-                                (async () => {
-                                    const hasRated = await checkIfRated(order.id, isDelivery ? 'delivery' : 'errand');
-                                    return !hasRated ? `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">评价</button>` : '';
-                                })() : ''}
+                                `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">评价</button>` : ''}
                         </div>
                     `;
             
@@ -3962,8 +3959,13 @@ function closeChat() {
     }
 }
 
-        // 新增功能：评价系统
-async function rateOrder(orderId, orderType) {
+        async function rateOrder(orderId, orderType) {
+    // 先检查是否已经评价过
+    const hasRated = await checkIfRated(orderId, orderType);
+    if (hasRated) {
+        alert('您已经评价过此订单！');
+        return;
+    }
     // 创建评价模态框
     const ratingModal = document.createElement('div');
     ratingModal.id = 'rating-modal';
@@ -4422,10 +4424,7 @@ async function rateOrder(orderId, orderType) {
                             ${order.status === 'delivered' && order.created_by === currentUser.id ? 
                                 `<button class="action-btn btn-confirm" onclick="confirmCompletion('${order.id}', '${orderType}')">确认完成</button>` : ''}
                             ${order.status === 'completed' ? 
-                                (async () => {
-                                    const hasRated = await checkIfRated(order.id, orderType);
-                                    return !hasRated ? `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', '${orderType}')">评价</button>` : '';
-                                })() : ''}
+                                `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">评价</button>` : ''}
                         </div>
                     </div>
                 `;
