@@ -476,6 +476,24 @@ input[type="datetime-local"].form-input {
         .btn-take:active {
             background-color: #3399ff;
         }
+
+        /* 跑腿任务接单按钮 - 新增 */
+        .btn-take-errand {
+            background: linear-gradient(135deg, #07c160, #05a050);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.2s;
+        }
+
+.btn-take-errand:active {
+    background: linear-gradient(135deg, #05a050, #048848);
+    transform: scale(0.98);
+}
         
         .btn-chat {
             background-color: #17a2b8;
@@ -2294,7 +2312,7 @@ async function renderErrandOrders() {
                     break;
                 case 'processing':
                     statusClass = 'status-processing';
-                    statusText = '进行中';
+                    statusText = '配送中';
                     break;
                 case 'delivered':
                     statusClass = 'status-delivered';
@@ -4424,7 +4442,7 @@ function closeChat() {
                             ${order.status === 'delivered' && order.created_by === currentUser.id ? 
                                 `<button class="action-btn btn-confirm" onclick="confirmCompletion('${order.id}', '${orderType}')">确认完成</button>` : ''}
                             ${order.status === 'completed' ? 
-                                `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">评价</button>` : ''}
+                                `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', '${orderType}')">评价</button>` : ''}
                         </div>
                     </div>
                 `;
