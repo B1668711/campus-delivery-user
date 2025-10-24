@@ -2314,9 +2314,8 @@ async function renderErrandOrders() {
             const isMyOrder = order.created_by === currentUser.id;
             const orderType = isMyOrder ? '我发布的' : '我接取的';
             
-            // 检查是否已评价（同步方式）
             let hasRated = false;
-            if (order.status === 'completed') {
+                if (order.status === 'completed') {
                 hasRated = await checkIfRated(order.id, 'errand');
             }
             
