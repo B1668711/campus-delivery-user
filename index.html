@@ -2109,6 +2109,214 @@ select {
         // 初始化 Supabase 客户端
         let supabase;
 
+        // ==================== 增强版全局错误处理器 ====================
+        
+        // 应用状态监控
+        const appState = {
+            isOnline: navigator.onLine,
+            lastError: null,
+            errorCount: 0,
+            supabaseConnected: false
+        };
+
+        // 错误分类
+        const ErrorTypes = {
+            NETWORK: 'network',
+            DATABASE: 'database',
+            UI: 'ui',
+            BUSINESS: 'business',
+            UNKNOWN: 'unknown'
+        };
+
+        // 错误上报函数（可以集成到您的监控系统）
+        function reportError(error, type = ErrorTypes.UNKNOWN, context = {}) {
+            const errorInfo = {
+                type,
+                message: error.message,
+                stack: error.stack,
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                url: window.location.href,
+                context,
+                appState
+            };
+            
+            console.error(`📊 错误上报 [${type}]:`, errorInfo);
+            
+            // 这里可以发送错误信息到您的监控服务
+            // sendToErrorMonitoringService(errorInfo);
+        }
+
+        // 全局错误处理
+        window.addEventListener('error', function(e) {
+            const errorDetails = {
+                message: e.message,
+                filename: e.filename,
+                lineno: e.lineno,
+                colno: e.colno,
+                error: e.error
+            };
+            
+            console.error('🚨 全局错误捕获:', errorDetails);
+            
+            // 错误分类
+            let errorType = ErrorTypes.UNKNOWN;
+            if (e.message.includes('Network') || e.message.includes('fetch')) {
+                errorType = ErrorTypes.NETWORK;
+            } else if (e.message.includes('Supabase') || e.message.includes('database')) {
+                errorType = ErrorTypes.DATABASE;
+            }
+            
+            appState.lastError = errorDetails;
+            appState.errorCount++;
+            
+            reportError(e.error || new Error(e.message), errorType, errorDetails);
+        });
+
+        // 未处理的 Promise rejection
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('🚨 未处理的 Promise rejection:', e.reason);
+            
+            // 错误分类
+            let errorType = ErrorTypes.UNKNOWN;
+            const reason = e.reason;
+            
+            if (reason && reason.message) {
+                if (reason.message.includes('Network') || reason.message.includes('fetch')) {
+                    errorType = ErrorTypes.NETWORK;
+                } else if (reason.message.includes('Supabase') || reason.message.includes('database')) {
+                    errorType = ErrorTypes.DATABASE;
+                }
+            }
+            
+            appState.lastError = reason;
+            appState.errorCount++;
+            
+            reportError(reason, errorType, { event: 'unhandledrejection' });
+            
+            // 阻止浏览器默认的错误提示
+            e.preventDefault();
+        });
+
+        // 网络状态监听
+        window.addEventListener('online', function() {
+            console.log('🌐 网络连接恢复');
+            appState.isOnline = true;
+            
+            // 隐藏离线提示
+            const banner = document.getElementById('offline-banner');
+            if (banner) {
+                banner.style.display = 'none';
+            }
+            
+            // 显示网络恢复提示
+            showNetworkRestored();
+            
+            // 尝试重新连接数据库
+            if (supabase) {
+                console.log('尝试重新连接数据库...');
+                testSupabaseConnection().then(connected => {
+                    appState.supabaseConnected = connected;
+                    if (connected) {
+                        console.log('✅ 数据库重新连接成功');
+                        // 重新同步数据
+                        refreshAllPages().catch(console.error);
+                    }
+                });
+            }
+        });
+
+        window.addEventListener('offline', function() {
+            console.log('🌐 网络连接断开');
+            appState.isOnline = false;
+            
+            // 显示离线提示
+            showOfflineMode();
+        });
+
+        // 页面可见性变化监听
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                console.log('📱 页面变为可见状态');
+                // 页面重新获得焦点时，可以刷新数据
+                if (supabase && currentUser && appState.isOnline) {
+                    setTimeout(() => {
+                        refreshAllPages().catch(console.error);
+                    }, 1000);
+                }
+            } else {
+                console.log('📱 页面变为隐藏状态');
+            }
+        });
+
+        // 内存警告监听（移动端）
+        window.addEventListener('memorywarning', function() {
+            console.warn('📱 内存警告：清理缓存数据');
+            // 可以在这里清理不必要的缓存数据
+        });
+
+        // 测试 Supabase 连接
+        async function testSupabaseConnection() {
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('count')
+                    .limit(1);
+                return !error;
+            } catch (error) {
+                console.error('数据库连接测试失败:', error);
+                return false;
+            }
+        }
+
+        // 显示网络恢复提示
+        function showNetworkRestored() {
+            const existingBanner = document.getElementById('network-restored-banner');
+            if (!existingBanner) {
+                const banner = document.createElement('div');
+                banner.id = 'network-restored-banner';
+                banner.style.cssText = `
+                    position: fixed;
+                    top: 50px;
+                    left: 0;
+                    right: 0;
+                    background: #07c160;
+                    color: white;
+                    padding: 8px;
+                    text-align: center;
+                    font-size: 14px;
+                    z-index: 1001;
+                    animation: slideDown 0.3s ease-out;
+                `;
+                banner.textContent = '✅ 网络连接已恢复';
+                document.body.appendChild(banner);
+                
+                // 3秒后自动隐藏
+                setTimeout(() => {
+                    banner.style.animation = 'slideUp 0.3s ease-in';
+                    setTimeout(() => {
+                        banner.remove();
+                    }, 300);
+                }, 3000);
+            }
+        }
+
+        // 添加 CSS 动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideDown {
+                from { transform: translateY(-100%); }
+                to { transform: translateY(0); }
+            }
+            @keyframes slideUp {
+                from { transform: translateY(0); }
+                to { transform: translateY(-100%); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // ==================== 错误处理器结束 ====================
+
         // 用户状态管理
         let currentUser = null;
         let currentChatOrder = null;
@@ -2125,6 +2333,50 @@ select {
             }
             return deviceId;
         }
+
+        // ==================== 用户ID虚拟掩码处理 ====================
+
+// 用户ID虚拟掩码处理：将UUID转换为8位阿拉伯数字
+function formatUserId(userId) {
+    if (!userId) return '00000000';
+    
+    // 提取UUID中的所有数字
+    const numbers = userId.replace(/\D/g, '');
+    
+    let virtualId;
+    if (numbers.length >= 8) {
+        // 取最后8位数字
+        virtualId = numbers.slice(-8);
+    } else {
+        // 如果数字不足8位，使用哈希补全
+        let hash = 0;
+        for (let i = 0; i < userId.length; i++) {
+            hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+            hash = hash & hash;
+        }
+        virtualId = Math.abs(hash).toString().slice(-8).padStart(8, '0');
+    }
+    
+    // 确保是8位数字
+    return virtualId.padStart(8, '0').slice(0, 8);
+}
+
+// 缓存已生成的虚拟ID，确保一致性
+const userIdCache = new Map();
+
+function getVirtualUserId(userId) {
+    if (!userId) return '00000000';
+    
+    if (userIdCache.has(userId)) {
+        return userIdCache.get(userId);
+    }
+    
+    const virtualId = formatUserId(userId);
+    userIdCache.set(userId, virtualId);
+    return virtualId;
+}
+
+// ==================== 虚拟ID处理结束 ====================
 
         // 清理无效的用户数据
         function clearInvalidUserData() {
@@ -2161,122 +2413,295 @@ select {
         }
 
         // 初始化用户
-        function initUser() {
-            const deviceId = generateDeviceId();
-            let user = localStorage.getItem('currentUser');
+async function initUser() {
+    const deviceId = generateDeviceId();
+    let user = localStorage.getItem('currentUser');
+    
+    console.log('从 localStorage 获取的用户数据:', user);
+    
+    // 首先尝试从本地存储加载
+    if (user && user !== 'superadmin') {
+        try {
+            currentUser = JSON.parse(user);
+            console.log('成功从本地存储加载用户数据:', currentUser);
             
-            console.log('从 localStorage 获取的用户数据:', user);
+            // 添加虚拟ID
+            currentUser.virtualId = getVirtualUserId(currentUser.id);
             
-            if (user) {
-                try {
-                    // 尝试解析 JSON
-                    currentUser = JSON.parse(user);
-                    console.log('成功解析用户数据:', currentUser);
-                    
-                    // 检查设备ID是否匹配
-                    if (currentUser.deviceId !== deviceId) {
-                        console.log('设备ID不匹配，创建新用户');
-                        createNewUser(deviceId);
-                    }
-                } catch (error) {
-                    console.error('解析用户数据失败，将创建新用户:', error);
-                    // 如果解析失败，创建新用户
-                    createNewUser(deviceId);
-                }
-            } else {
-                console.log('未找到用户数据，创建新用户');
-                createNewUser(deviceId);
+            // 然后尝试从数据库同步（静默同步，不阻塞应用）
+            setTimeout(() => {
+                syncUserFromDatabase(deviceId).catch(console.error);
+            }, 1000);
+            
+        } catch (error) {
+            console.error('解析用户数据失败，创建新用户:', error);
+            await createNewUserInDatabase(deviceId);
+        }
+    } else {
+        console.log('未找到有效用户数据，创建新用户');
+        await createNewUserInDatabase(deviceId);
+    }
+    
+    updateUserDisplay();
+    return currentUser;
+}
+
+// 修复后的 syncUserFromDatabase 函数
+async function syncUserFromDatabase(deviceId) {
+    try {
+        console.log('正在从数据库同步用户数据，deviceId:', deviceId);
+        
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('device_id', deviceId);
+        
+        if (error) {
+            console.error('从数据库获取用户数据失败:', error);
+            
+            // 处理各种可能的错误
+            if (error.code === '42703' || error.code === '42P01' || error.code === 'PGRST204' || error.code === 'PGRST116') {
+                console.warn('数据库表结构不完整或查询失败，使用本地模式');
+                return; // 不创建新用户，保持本地模式
             }
             
-            updateUserDisplay();
-            return currentUser;
+            return;
         }
-
-        // 创建新用户
-        function createNewUser(deviceId) {
-            const userId = 'user_' + Date.now();
+        
+        // 检查是否有数据
+        if (data && data.length > 0) {
+            const userData = data[0];
+            console.log('找到用户数据:', userData);
+            
+            // 更新本地用户数据
             currentUser = {
-                id: userId,
-                deviceId: deviceId,
-                name: '用户' + userId.slice(-6),
-                contactMethod: 'wechat',
-                contactInfo: '',
+                id: userData.id,
+                deviceId: userData.device_id,
+                name: userData.name,
+                contactMethod: userData.contact_method,
+                contactInfo: userData.contact_info,
                 isTaker: false,
-                autoFillContact: true,
-                defaultContactType: 'wechat',
-                defaultContactInfo: '',
-                defaultAddress: '',
-                createdAt: new Date().toISOString()
+                autoFillContact: userData.auto_fill_contact,
+                defaultContactType: userData.default_contact_type,
+                defaultContactInfo: userData.default_contact_info,
+                defaultAddress: userData.default_address,
+                createdAt: userData.created_at
             };
+            
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            console.log('已从数据库同步用户数据');
+        } else {
+            console.log('数据库中未找到用户数据，将创建新用户');
+            await createNewUserInDatabase(deviceId);
         }
+    } catch (error) {
+        console.error('同步用户数据失败:', error);
+    }
+}
 
-        // 保存用户信息
-        function saveUser(user) {
-            currentUser = { ...currentUser, ...user };
-            
-            // 确保保存的是有效的 JSON
-            try {
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                console.log('用户数据已保存:', currentUser);
-            } catch (error) {
-                console.error('保存用户数据失败:', error);
+// 修复后的 createNewUserInDatabase 函数
+async function createNewUserInDatabase(deviceId) {
+    try {
+        console.log('正在在数据库中创建新用户，deviceId:', deviceId);
+        
+        const userId = 'user_' + Date.now();
+        const userData = {
+            device_id: deviceId,
+            name: '用户' + userId.slice(-6)
+        };
+        
+        // 只插入最基本的字段，避免列不存在的问题
+        const { data, error } = await supabase
+            .from('users')
+            .insert([userData])
+            .select();
+        
+        if (error) {
+            // 如果是表结构错误，降级到本地模式
+            if (error.code === '42703' || error.code === '42P01' || error.code === 'PGRST204') {
+                console.warn('数据库表结构不完整，无法创建用户，使用本地模式');
+                // 降级到本地存储
+                createNewUserLocal(deviceId);
+                return;
             }
-            
-            updateUserDisplay();
+            throw error;
         }
+        
+        if (data && data.length > 0) {
+            const newUser = data[0];
+            currentUser = {
+                id: newUser.id,
+                deviceId: newUser.device_id,
+                name: newUser.name,
+                contactMethod: newUser.contact_method || 'wechat',
+                contactInfo: newUser.contact_info || '',
+                isTaker: false,
+                autoFillContact: newUser.auto_fill_contact !== undefined ? newUser.auto_fill_contact : true,
+                defaultContactType: newUser.default_contact_type || 'wechat',
+                defaultContactInfo: newUser.default_contact_info || '',
+                defaultAddress: newUser.default_address || '',
+                createdAt: newUser.created_at
+            };
+            
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            console.log('新用户创建成功:', currentUser);
+        }
+        
+    } catch (error) {
+        console.error('创建新用户失败:', error);
+        // 如果数据库操作失败，回退到本地存储
+        console.log('降级到本地存储模式');
+        createNewUserLocal(deviceId);
+    }
+}
+
+// 本地创建用户的辅助函数
+function createNewUserLocal(deviceId) {
+    const userId = 'user_' + Date.now();
+    currentUser = {
+        id: userId,
+        deviceId: deviceId,
+        name: '用户' + userId.slice(-6),
+        contactMethod: 'wechat',
+        contactInfo: '',
+        isTaker: false,
+        autoFillContact: true,
+        defaultContactType: 'wechat',
+        defaultContactInfo: '',
+        defaultAddress: '',
+        createdAt: new Date().toISOString(),
+        virtualId: getVirtualUserId(userId) // 添加虚拟ID
+    };
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    console.log('本地用户创建成功:', currentUser);
+}
+// 保留原有的本地创建函数作为后备
+function createNewUser(deviceId) {
+    const userId = 'user_' + Date.now();
+    currentUser = {
+        id: userId,
+        deviceId: deviceId,
+        name: '用户' + userId.slice(-6),
+        contactMethod: 'wechat',
+        contactInfo: '',
+        isTaker: false,
+        autoFillContact: true,
+        defaultContactType: 'wechat',
+        defaultContactInfo: '',
+        defaultAddress: '',
+        createdAt: new Date().toISOString()
+    };
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+}
+
+
+        // 保存用户信息 - 更新版本
+async function saveUser(user) {
+    currentUser = { ...currentUser, ...user };
+    
+    // 保存到本地存储
+    try {
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        console.log('用户数据已保存到本地存储:', currentUser);
+    } catch (error) {
+        console.error('保存用户数据到本地存储失败:', error);
+    }
+    
+    // 保存到数据库
+    await saveUserToDatabase(currentUser);
+    
+    updateUserDisplay();
+}
+
+// 保存用户数据到数据库
+async function saveUserToDatabase(user) {
+    try {
+        const userData = {
+            device_id: user.deviceId,
+            name: user.name,
+            contact_method: user.contactMethod,
+            contact_info: user.contactInfo,
+            auto_fill_contact: user.autoFillContact,
+            default_contact_type: user.defaultContactType,
+            default_contact_info: user.defaultContactInfo,
+            default_address: user.defaultAddress,
+            updated_at: new Date().toISOString()
+        };
+        
+        const { data, error } = await supabase
+            .from('users')
+            .upsert(userData, { 
+                onConflict: 'device_id',
+                ignoreDuplicates: false 
+            })
+            .select();
+        
+        if (error) {
+            console.error('保存用户数据到数据库失败:', error);
+            return;
+        }
+        
+        console.log('用户数据已保存到数据库:', data);
+        
+    } catch (error) {
+        console.error('保存用户数据到数据库时发生错误:', error);
+    }
+}
 
         // 更新用户显示
-        function updateUserDisplay() {
-            if (!currentUser) return;
-            
-            document.getElementById('user-display-name').textContent = currentUser.name;
-            document.getElementById('user-display-id').textContent = 'ID: ' + currentUser.id.slice(-8);
-            document.getElementById('user-avatar').textContent = currentUser.name.charAt(0);
-            
-            // 更新设置页面用户信息
-            document.getElementById('settings-user-name').textContent = currentUser.name;
-            document.getElementById('settings-user-id').textContent = 'ID: ' + currentUser.id.slice(-8);
-            document.getElementById('settings-user-avatar').textContent = currentUser.name.charAt(0);
-            
-            // 更新设置页面详细信息
-            document.getElementById('display-user-name').textContent = currentUser.name;
-            document.getElementById('display-user-id').textContent = currentUser.id;
-            
-            // 更新默认信息设置
-            document.getElementById('auto-fill-toggle').checked = currentUser.autoFillContact;
-            document.getElementById('default-contact-info').value = currentUser.defaultContactInfo || '';
-            document.getElementById('default-address').value = currentUser.defaultAddress || '';
-            
-            // 更新设置页面的默认联系方式类型
-            const settingsContactBtns = document.querySelectorAll('#settings-page .contact-type-btn');
-            settingsContactBtns.forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.type === currentUser.defaultContactType) {
-                    btn.classList.add('active');
-                }
-            });
+function updateUserDisplay() {
+    if (!currentUser) return;
+    
+    // 生成虚拟用户ID
+    const virtualUserId = getVirtualUserId(currentUser.id);
+    
+    document.getElementById('user-display-name').textContent = currentUser.name;
+    document.getElementById('user-display-id').textContent = 'ID: ' + virtualUserId;
+    document.getElementById('user-avatar').textContent = currentUser.name.charAt(0);
+    
+    // 更新设置页面用户信息
+    document.getElementById('settings-user-name').textContent = currentUser.name;
+    document.getElementById('settings-user-id').textContent = 'ID: ' + virtualUserId;
+    document.getElementById('settings-user-avatar').textContent = currentUser.name.charAt(0);
+    
+    // 更新设置页面详细信息
+    document.getElementById('display-user-name').textContent = currentUser.name;
+    document.getElementById('display-user-id').textContent = virtualUserId; // 使用虚拟ID
+    
+    // 更新默认信息设置
+    document.getElementById('auto-fill-toggle').checked = currentUser.autoFillContact;
+    document.getElementById('default-contact-info').value = currentUser.defaultContactInfo || '';
+    document.getElementById('default-address').value = currentUser.defaultAddress || '';
+    
+    // 更新设置页面的默认联系方式类型
+    const settingsContactBtns = document.querySelectorAll('#settings-page .contact-type-btn');
+    settingsContactBtns.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.type === currentUser.defaultContactType) {
+            btn.classList.add('active');
         }
+    });
+}
 
-        // 保存默认信息
-        function saveDefaultInfo() {
-            const autoFill = document.getElementById('auto-fill-toggle').checked;
-            const contactInfo = document.getElementById('default-contact-info').value;
-            const address = document.getElementById('default-address').value;
-            
-            // 获取默认联系方式类型
-            const activeContactBtn = document.querySelector('#settings-page .contact-type-btn.active');
-            const defaultContactType = activeContactBtn ? activeContactBtn.dataset.type : 'wechat';
-            
-            saveUser({
-                autoFillContact: autoFill,
-                defaultContactType: defaultContactType,
-                defaultContactInfo: contactInfo,
-                defaultAddress: address
-            });
-            
-            alert('默认信息已保存！');
-        }
+        // 保存默认信息 - 更新版本
+async function saveDefaultInfo() {
+    const autoFill = document.getElementById('auto-fill-toggle').checked;
+    const contactInfo = document.getElementById('default-contact-info').value;
+    const address = document.getElementById('default-address').value;
+    
+    // 获取默认联系方式类型
+    const activeContactBtn = document.querySelector('#settings-page .contact-type-btn.active');
+    const defaultContactType = activeContactBtn ? activeContactBtn.dataset.type : 'wechat';
+    
+    await saveUser({
+        autoFillContact: autoFill,
+        defaultContactType: defaultContactType,
+        defaultContactInfo: contactInfo,
+        defaultAddress: address
+    });
+    
+    alert('默认信息已保存！');
+}
 
         // 自动填充联系信息
         function autoFillContactInfo() {
@@ -4096,80 +4521,194 @@ function showPage(pageId) {
             }
         }
 
-        // 初始化应用
-        async function initApp() {
-            // 清理可能存在的无效用户数据
-            clearInvalidUserData();
-            
-            // 检查网络连接
-            if (!navigator.onLine) {
-                alert('网络连接不可用，请检查网络设置');
-                return;
-            }
-            
-            console.log('开始初始化应用...');
-            
-            try {
-                // 初始化 Supabase 客户端
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                console.log('Supabase 客户端初始化完成');
-                
-                // 测试 Supabase 连接
-                console.log('正在测试数据库连接...');
-                const { data, error } = await supabase
-                    .from('delivery_orders')
-                    .select('id')
-                    .limit(1);
-                    
-                if (error) {
-                    console.error('Supabase 连接测试失败:', error);
-                    alert('数据库连接失败: ' + error.message);
-                    return;
-                }
-                
-                console.log('Supabase 连接成功，可以正常访问数据库');
-                
-            } catch (error) {
-                console.error('初始化失败:', error);
-                alert('应用初始化失败: ' + error.message);
-                return;
-            }
-            
-            // 初始化用户
-            initUser();
-            
-            // 初始化联系方式选择器
-            initContactTypeSelectors();
-            
-            // 设置默认的期望送达时间为当前时间后2小时
-            const now = new Date();
-            now.setHours(now.getHours() + 2);
-            document.getElementById('delivery-time').value = now.toISOString().slice(0, 16);
-            
-            // 设置默认的跑腿截止时间为当前时间后2小时
-            document.getElementById('errand-deadline').value = now.toISOString().slice(0, 16);
-            
-            // 初始化事件监听器
-            initEventListeners();
-            
-            // 请求通知权限
-            requestNotificationPermission();
-            
-            // 初始加载首页统计
-            try {
-                await updateMainPageStats();
-                console.log('应用初始化完成');
-            } catch (error) {
-                console.error('加载统计数据失败:', error);
-            }
-            
-            // 启动定时器定期更新未读消息徽章
-            if (unreadUpdateInterval) clearInterval(unreadUpdateInterval);
-            unreadUpdateInterval = setInterval(updateTabUnreadBadge, 10000); // 每10秒更新一次
-            
-            // 初始化未读徽章
-            await updateTabUnreadBadge();
+        // 离线模式初始化（降级方案）
+async function initUserLocalOnly() {
+    console.log('使用本地模式初始化用户...');
+    const deviceId = generateDeviceId();
+    let user = localStorage.getItem('currentUser');
+    
+    if (user && user !== 'superadmin') {
+        try {
+            currentUser = JSON.parse(user);
+            console.log('从本地存储加载用户数据');
+        } catch (error) {
+            console.error('解析本地用户数据失败，创建新用户:', error);
+            createNewUser(deviceId);
         }
+    } else {
+        console.log('本地无用户数据，创建新用户');
+        createNewUser(deviceId);
+    }
+    
+    updateUserDisplay();
+    
+    // 显示离线模式提示
+    showOfflineMode();
+}
+
+// 设置默认时间
+function setupDefaultTimes() {
+    const now = new Date();
+    now.setHours(now.getHours() + 2);
+    
+    // 设置代取快递的默认期望送达时间
+    const deliveryTimeInput = document.getElementById('delivery-time');
+    if (deliveryTimeInput) {
+        deliveryTimeInput.value = now.toISOString().slice(0, 16);
+    }
+    
+    // 设置跑腿任务的默认截止时间
+    const errandDeadlineInput = document.getElementById('errand-deadline');
+    if (errandDeadlineInput) {
+        errandDeadlineInput.value = now.toISOString().slice(0, 16);
+    }
+    
+    console.log('默认时间设置完成');
+}
+
+// 显示离线模式提示
+function showOfflineMode() {
+    // 可以在这里添加离线模式的UI提示
+    console.log('应用运行在离线模式，部分功能可能受限');
+    
+    // 可选：显示一个小的离线提示
+    const existingBanner = document.getElementById('offline-banner');
+    if (!existingBanner) {
+        const banner = document.createElement('div');
+        banner.id = 'offline-banner';
+        banner.style.cssText = `
+            position: fixed;
+            top: 50px;
+            left: 0;
+            right: 0;
+            background: #ff9800;
+            color: white;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+            z-index: 1001;
+        `;
+        banner.textContent = '离线模式：数据将保存在本地';
+        document.body.appendChild(banner);
+        
+        // 5秒后自动隐藏
+        setTimeout(() => {
+            banner.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// 显示初始化完成
+function showInitializationComplete() {
+    console.log('🎉 应用初始化流程完成');
+    
+    // 可选：移除加载状态或显示就绪提示
+    const loadingElements = document.querySelectorAll('.loading');
+    loadingElements.forEach(element => {
+        if (element.innerHTML.includes('fa-spinner')) {
+            element.innerHTML = '<i class="fas fa-check-circle"></i> 加载完成';
+            element.style.color = '#07c160';
+        }
+    });
+}
+
+        // 初始化应用 - 修改版本
+async function initApp() {
+    // 清理可能存在的无效用户数据
+    clearInvalidUserData();
+    
+    // 检查网络连接
+    if (!navigator.onLine) {
+        alert('网络连接不可用，请检查网络设置');
+        showOfflineMode();
+        return;
+    }
+    
+    console.log('开始初始化应用...');
+    
+    try {
+        // 第一步：初始化 Supabase 客户端
+        console.log('正在初始化 Supabase 客户端...');
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Supabase 客户端初始化完成');
+
+        // 第二步：测试数据库连接
+        console.log('正在测试数据库连接...');
+        const { data, error } = await supabase
+            .from('users')
+            .select('count')
+            .limit(1);
+            
+        if (error) {
+            console.error('Supabase 连接测试失败:', error);
+            
+            // 检查是否是表不存在错误
+            if (error.code === '42P01') { // 表不存在
+                console.log('用户表不存在，将使用本地模式');
+                await initUserLocalOnly();
+            } else {
+                alert('数据库连接失败: ' + error.message);
+                await initUserLocalOnly();
+                return;
+            }
+        } else {
+            console.log('Supabase 连接成功，可以正常访问数据库');
+            
+            // 第三步：初始化用户（与数据库同步）
+            console.log('正在初始化用户...');
+            await initUser();
+        }
+        
+    } catch (error) {
+        console.error('初始化失败:', error);
+        alert('应用初始化失败: ' + error.message);
+        
+        // 降级到本地模式
+        await initUserLocalOnly();
+        return;
+    }
+    
+    // 第四步：初始化联系方式选择器
+    console.log('正在初始化联系方式选择器...');
+    initContactTypeSelectors();
+    
+    // 第五步：设置默认时间
+    console.log('正在设置默认时间...');
+    setupDefaultTimes();
+    
+    // 第六步：初始化事件监听器
+    console.log('正在初始化事件监听器...');
+    initEventListeners();
+    
+    // 第七步：请求通知权限
+    console.log('正在请求通知权限...');
+    requestNotificationPermission();
+    
+    // 第八步：初始加载首页统计
+    try {
+        console.log('正在加载首页统计...');
+        await updateMainPageStats();
+        console.log('应用初始化完成');
+    } catch (error) {
+        console.error('加载统计数据失败:', error);
+    }
+    
+    // 第九步：启动定时器定期更新未读消息徽章
+    if (unreadUpdateInterval) clearInterval(unreadUpdateInterval);
+    unreadUpdateInterval = setInterval(updateTabUnreadBadge, 10000);
+    
+    // 第十步：初始化未读徽章
+    try {
+        console.log('正在初始化未读徽章...');
+        await updateTabUnreadBadge();
+        console.log('未读徽章初始化完成');
+    } catch (error) {
+        console.error('初始化未读徽章失败:', error);
+    }
+    
+    // 显示初始化完成状态
+    showInitializationComplete();
+}
 
         // 显示我的订单页面
         function showMyOrders() {
@@ -5129,3 +5668,4 @@ function applyFilters() {
     </script>
 </body>
 </html>
+
