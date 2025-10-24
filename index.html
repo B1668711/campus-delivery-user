@@ -890,8 +890,8 @@ input[type="datetime-local"].form-input {
     max-width: 500px;
     max-height: 80%;
     border-radius: 12px;
-    overflow-y: auto; /* 恢复滚动 */
-    padding: 0; /* 移除内边距，由内部元素控制 */
+    overflow-y: auto;
+    padding: 0; /* 修改这一行 */
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 
@@ -899,18 +899,55 @@ input[type="datetime-local"].form-input {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
+    padding: 18px 24px; /* 修改这一行 */
     border-bottom: 1px solid #e0e0e0;
-    position: sticky;
-    top: 0;
-    background: white;
-    z-index: 10;
-    margin-bottom: 0; /* 确保没有额外的下边距 */
+    position: sticky; /* 新增这一行 */
+    top: 0; /* 新增这一行 */
+    background: white; /* 新增这一行 */
+    z-index: 10; /* 新增这一行 */
+    margin-bottom: 0; /* 修改这一行 */
 }
 
+/* 在 .order-detail-header 后面添加这些新样式 */
 .order-detail-body {
-    padding: 0 20px 20px; /* 恢复两侧和底部的间隙 */
-    /* 不需要设置高度，由内容自然撑开 */
+    padding: 20px 24px 24px; /* 增加所有方向的内边距 */
+    background-color: #f8f9fa; /* 添加浅灰色背景 */
+}
+
+.order-detail-section {
+    margin-bottom: 20px; /* 增加区块之间的间距 */
+    background: white; /* 每个区块都有白色背景 */
+    border-radius: 10px; /* 圆角 */
+    padding: 16px; /* 区块内边距 */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* 轻微阴影 */
+}
+
+.order-detail-section h4 {
+    margin-bottom: 12px;
+    color: #4da6ff;
+    font-size: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.order-detail-info {
+    background: #f9f9f9;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.order-detail-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.order-detail-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
 }
 
         .order-detail-title {
@@ -4329,142 +4366,157 @@ function closeChat() {
                 const userRole = isMyOrder ? '发布者' : '接单者';
                 
                 detailModal.innerHTML = `
-                    <div class="order-detail-content">
-                        <div class="order-detail-header">
-                            <div class="order-detail-title">订单详情</div>
-                            <button class="order-detail-close" onclick="closeOrderDetail()">×</button>
-                        </div>
-                        
-                        <div class="order-detail-section">
-                            <h4>基本信息</h4>
-                            <div class="order-detail-info">
-                                <div class="order-detail-item">
-                                    <span class="order-detail-label">订单ID：</span>
-                                    <span class="order-detail-value">${order.id.slice(-8)}</span>
-                                </div>
-                                <div class="order-detail-item">
-                                    <span class="order-detail-label">订单类型：</span>
-                                    <span class="order-detail-value">${orderType === 'delivery' ? '代取快递' : '跑腿任务'}</span>
-                                </div>
-                                <div class="order-detail-item">
-                                    <span class="order-detail-label">您的角色：</span>
-                                    <span class="order-detail-value">${userRole}</span>
-                                </div>
-                                <div class="order-detail-item">
-                                    <span class="order-detail-label">订单状态：</span>
-                                    <span class="order-detail-value ${statusClass}">${statusText}</span>
-                                </div>
-                                <div class="order-detail-item">
-                                    <span class="order-detail-label">酬劳：</span>
-                                    <span class="order-detail-value">${order.reward}元</span>
-                                </div>
-                                <div class="order-detail-item">
-                                    <span class="order-detail-label">创建时间：</span>
-                                    <span class="order-detail-value">${new Date(order.created_at).toLocaleString()}</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        ${orderType === 'delivery' ? `
-                            <div class="order-detail-section">
-                                <h4>代取详情</h4>
-                                <div class="order-detail-info">
-                                    <div class="order-detail-item">
-                                        <span class="order-detail-label">取件地址：</span>
-                                        <span class="order-detail-value">${order.pickup_address}</span>
-                                    </div>
-                                    <div class="order-detail-item">
-                                        <span class="order-detail-label">送达地址：</span>
-                                        <span class="order-detail-value">${order.delivery_address}</span>
-                                    </div>
-                                    <div class="order-detail-item">
-                                        <span class="order-detail-label">期望送达时间：</span>
-                                        <span class="order-detail-value">${new Date(order.delivery_time).toLocaleString()}</span>
-                                    </div>
-                                    <div class="order-detail-item">
-                                        <span class="order-detail-label">取件码：</span>
-                                        <span class="order-detail-value">${order.pickup_code}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ` : `
-                            <div class="order-detail-section">
-                                <h4>任务详情</h4>
-                                <div class="order-detail-info">
-                                    <div class="order-detail-item">
-                                        <span class="order-detail-label">任务标题：</span>
-                                        <span class="order-detail-value">${order.title}</span>
-                                    </div>
-                                    <div class="order-detail-item">
-                                        <span class="order-detail-label">任务描述：</span>
-                                        <span class="order-detail-value">${order.description}</span>
-                                    </div>
-                                    <div class="order-detail-item">
-                                        <span class="order-detail-label">取物地点：</span>
-                                        <span class="order-detail-value">${order.pickup_location}</span>
-                                    </div>
-                                    <div class="order-detail-item">
-                                        <span class="order-detail-label">送达地点：</span>
-                                        <span class="order-detail-value">${order.delivery_location}</span>
-                                    </div>
-                                    <div class="order-detail-item">
-                                        <span class="order-detail-label">期望完成时间：</span>
-                                        <span class="order-detail-value">${new Date(order.deadline).toLocaleString()}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        `}
-                        
-                        <div class="order-detail-section">
-    <h4>联系人信息</h4>
-    <div class="order-detail-info">
-        <div class="order-detail-item">
-            <span class="order-detail-label">发布者：</span>
-            <span class="order-detail-value">${order.contact_name}</span>
+    <div class="order-detail-content">
+        <div class="order-detail-header">
+            <div class="order-detail-title" style="font-size: 18px; font-weight: 600;">订单详情</div>
+            <button class="order-detail-close" onclick="closeOrderDetail()" style="
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: #666;
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: all 0.2s;
+            " onmouseover="this.style.backgroundColor='#f0f0f0'" onmouseout="this.style.backgroundColor='transparent'">×</button>
         </div>
-        <div class="order-detail-item">
-            <span class="order-detail-label">联系方式：</span>
-            <span class="order-detail-value">
-                ${order.taken_by ? order.contact_info : '<span style="color: #999;">接单后显示</span>'}
-            </span>
-        </div>
-        ${order.taken_by ? `
-            <div class="order-detail-item">
-                <span class="order-detail-label">接单者：</span>
-                <span class="order-detail-value">${order.taker_name}</span>
+        
+        <div class="order-detail-body">
+            <div class="order-detail-section">
+                <h4>基本信息</h4>
+                <div class="order-detail-info">
+                    <div class="order-detail-item">
+                        <span class="order-detail-label">订单ID：</span>
+                        <span class="order-detail-value">${order.id.slice(-8)}</span>
+                    </div>
+                    <div class="order-detail-item">
+                        <span class="order-detail-label">订单类型：</span>
+                        <span class="order-detail-value">${orderType === 'delivery' ? '代取快递' : '跑腿任务'}</span>
+                    </div>
+                    <div class="order-detail-item">
+                        <span class="order-detail-label">您的角色：</span>
+                        <span class="order-detail-value">${userRole}</span>
+                    </div>
+                    <div class="order-detail-item">
+                        <span class="order-detail-label">订单状态：</span>
+                        <span class="order-detail-value ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="order-detail-item">
+                        <span class="order-detail-label">酬劳：</span>
+                        <span class="order-detail-value">${order.reward}元</span>
+                    </div>
+                    <div class="order-detail-item">
+                        <span class="order-detail-label">创建时间：</span>
+                        <span class="order-detail-value">${new Date(order.created_at).toLocaleString()}</span>
+                    </div>
+                </div>
             </div>
-            <div class="order-detail-item">
-                <span class="order-detail-label">接单者联系方式：</span>
-                <span class="order-detail-value">${order.taker_contact}</span>
-            </div>
-        ` : ''}
-    </div>
-</div>
-                        
-                        ${order.notes ? `
-                            <div class="order-detail-section">
-                                <h4>备注</h4>
-                                <div class="order-detail-info">
-                                    <div class="order-detail-item">
-                                        <span class="order-detail-label">备注信息：</span>
-                                        <span class="order-detail-value">${order.notes}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ` : ''}
-                        
-                        <div class="order-actions" style="margin-top: 20px;">
-                            ${(order.status === 'taken' || order.status === 'processing' || order.status === 'delivered') && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
-                                `<button class="action-btn btn-chat" onclick="openChat('${order.id}', '${orderType}')">联系对方</button>` : ''}
-                            ${order.status === 'processing' && order.taken_by === currentUser.id ? 
-                                `<button class="action-btn btn-delivered" onclick="markAsDelivered('${order.id}', '${orderType}')">已送达</button>` : ''}
-                            ${order.status === 'delivered' && order.created_by === currentUser.id ? 
-                                `<button class="action-btn btn-confirm" onclick="confirmCompletion('${order.id}', '${orderType}')">确认完成</button>` : ''}
-                            ${order.status === 'completed' ? 
-                                `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', '${orderType}')">评价</button>` : ''}
+            
+            ${orderType === 'delivery' ? `
+                <div class="order-detail-section">
+                    <h4>代取详情</h4>
+                    <div class="order-detail-info">
+                        <div class="order-detail-item">
+                            <span class="order-detail-label">取件地址：</span>
+                            <span class="order-detail-value">${order.pickup_address}</span>
+                        </div>
+                        <div class="order-detail-item">
+                            <span class="order-detail-label">送达地址：</span>
+                            <span class="order-detail-value">${order.delivery_address}</span>
+                        </div>
+                        <div class="order-detail-item">
+                            <span class="order-detail-label">期望送达时间：</span>
+                            <span class="order-detail-value">${new Date(order.delivery_time).toLocaleString()}</span>
+                        </div>
+                        <div class="order-detail-item">
+                            <span class="order-detail-label">取件码：</span>
+                            <span class="order-detail-value">${order.pickup_code}</span>
                         </div>
                     </div>
-                `;
+                </div>
+            ` : `
+                <div class="order-detail-section">
+                    <h4>任务详情</h4>
+                    <div class="order-detail-info">
+                        <div class="order-detail-item">
+                            <span class="order-detail-label">任务标题：</span>
+                            <span class="order-detail-value">${order.title}</span>
+                        </div>
+                        <div class="order-detail-item">
+                            <span class="order-detail-label">任务描述：</span>
+                            <span class="order-detail-value">${order.description}</span>
+                        </div>
+                        <div class="order-detail-item">
+                            <span class="order-detail-label">取物地点：</span>
+                            <span class="order-detail-value">${order.pickup_location}</span>
+                        </div>
+                        <div class="order-detail-item">
+                            <span class="order-detail-label">送达地点：</span>
+                            <span class="order-detail-value">${order.delivery_location}</span>
+                        </div>
+                        <div class="order-detail-item">
+                            <span class="order-detail-label">期望完成时间：</span>
+                            <span class="order-detail-value">${new Date(order.deadline).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+            `}
+            
+            <div class="order-detail-section">
+                <h4>联系人信息</h4>
+                <div class="order-detail-info">
+                    <div class="order-detail-item">
+                        <span class="order-detail-label">发布者：</span>
+                        <span class="order-detail-value">${order.contact_name}</span>
+                    </div>
+                    <div class="order-detail-item">
+                        <span class="order-detail-label">联系方式：</span>
+                        <span class="order-detail-value">
+                            ${order.taken_by ? order.contact_info : '<span style="color: #999;">接单后显示</span>'}
+                        </span>
+                    </div>
+                    ${order.taken_by ? `
+                        <div class="order-detail-item">
+                            <span class="order-detail-label">接单者：</span>
+                            <span class="order-detail-value">${order.taker_name}</span>
+                        </div>
+                        <div class="order-detail-item">
+                            <span class="order-detail-label">接单者联系方式：</span>
+                            <span class="order-detail-value">${order.taker_contact}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            ${order.notes ? `
+                <div class="order-detail-section">
+                    <h4>备注</h4>
+                    <div class="order-detail-info">
+                        <div class="order-detail-item">
+                            <span class="order-detail-label">备注信息：</span>
+                            <span class="order-detail-value">${order.notes}</span>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div class="order-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                ${(order.status === 'taken' || order.status === 'processing' || order.status === 'delivered') && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
+                    `<button class="action-btn btn-chat" onclick="openChat('${order.id}', '${orderType}')" style="flex: 1;">联系对方</button>` : ''}
+                ${order.status === 'processing' && order.taken_by === currentUser.id ? 
+                    `<button class="action-btn btn-delivered" onclick="markAsDelivered('${order.id}', '${orderType}')" style="flex: 1;">已送达</button>` : ''}
+                ${order.status === 'delivered' && order.created_by === currentUser.id ? 
+                    `<button class="action-btn btn-confirm" onclick="confirmCompletion('${order.id}', '${orderType}')" style="flex: 1;">确认完成</button>` : ''}
+                ${order.status === 'completed' ? 
+                    `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', '${orderType}')" style="flex: 1;">评价</button>` : ''}
+            </div>
+        </div>
+    </div>
+`;
                 
                 document.body.appendChild(detailModal);
                 
