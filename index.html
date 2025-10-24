@@ -494,6 +494,24 @@ input[type="datetime-local"].form-input {
         .btn-cancel:active {
             background-color: #e0a800;
         }
+
+        /* 新增开始配送/开始任务按钮样式 */
+        .btn-processing {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.2s;
+        }
+
+        .btn-processing:active {
+            background-color: #138496;
+            transform: scale(0.98);
+        }
         
         .btn-delivered {
             background-color: #28a745;
@@ -2104,6 +2122,11 @@ async function renderDeliveryOrders() {
                     ${badgeHTML}
                 </button>`;
             }
+
+            // 添加开始配送按钮（只有接单人且状态为taken）
+if (order.status === 'taken' && order.taken_by === currentUser.id) {
+    orderHTML += `<button class="action-btn btn-processing" onclick="startDelivery('${order.id}', 'delivery')">开始配送</button>`;
+}
             
             // 添加送达按钮（只有接单人且状态为processing）
             if (order.status === 'processing' && order.taken_by === currentUser.id) {
@@ -2248,7 +2271,11 @@ async function renderDeliveryOrders() {
                         </div>
                         <div class="order-actions">
                             ${order.status === 'taken' && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
-    `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'errand')" style="position: relative;">联系对方${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}</button>` : ''}
+                                `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'errand')" style="position: relative;">联系对方${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}</button>` : ''}
+                            ${order.status === 'taken' && order.taken_by === currentUser.id ? 
+                                 `<button class="action-btn btn-processing" onclick="startDelivery('${order.id}', 'errand')">开始任务</button>` : ''}
+                            ${order.status === 'processing' && order.taken_by === currentUser.id ? 
+                                `<button class="action-btn btn-delivered" onclick="markAsDelivered('${order.id}', 'errand')">已送达</button>` : ''}
                             ${order.status === 'processing' && order.taken_by === currentUser.id ? 
                                 `<button class="action-btn btn-delivered" onclick="markAsDelivered('${order.id}', 'errand')">已送达</button>` : ''}
                             ${order.status === 'delivered' && order.created_by === currentUser.id ? 
@@ -2451,6 +2478,40 @@ async function renderDeliveryOrders() {
                 `;
             }
         }
+
+        // 开始配送/开始任务 - 新增函数
+async function startDelivery(orderId, orderType) {
+    if (!confirm('确定开始配送/执行任务吗？')) return;
+    
+    try {
+        if (orderType === 'delivery') {
+            await updateOrder(orderId, {
+                status: 'processing',
+                updated_at: new Date().toISOString()
+            });
+        } else {
+            await updateErrandOrder(orderId, {
+                status: 'processing', 
+                updated_at: new Date().toISOString()
+            });
+        }
+        
+        alert('已开始配送/执行任务！');
+        
+        // 刷新相关页面
+        if (orderType === 'delivery') {
+            await renderDeliveryOrders();
+        } else {
+            await renderErrandOrders();
+        }
+        
+        await refreshAllPages();
+
+    } catch (error) {
+        console.error('开始配送失败:', error);
+        alert('操作失败，请重试！');
+    }
+}
 
         // 接取代取订单
         async function takeOrder(orderId) {
