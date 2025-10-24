@@ -561,14 +561,25 @@ input[type="datetime-local"].form-input {
         /* 设置页面样式优化 */
         .settings-section {
             margin-bottom: 25px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
         
         .settings-section h3 {
-            font-size: 16px;
-            margin-bottom: 15px;
+            font-size: 18px;
+            margin-bottom: 20px;
             color: #4da6ff;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f8ff;
+            display: flex;
+            align-items: center;
+        }
+        
+        .settings-section h3 i {
+            margin-right: 10px;
+            font-size: 20px;
         }
         
         .settings-item {
@@ -578,6 +589,12 @@ input[type="datetime-local"].form-input {
             background-color: #fafafa;
             border-radius: 10px;
             margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        
+        .settings-item:hover {
+            background-color: #f0f8ff;
+            transform: translateY(-2px);
         }
         
         .settings-label {
@@ -596,9 +613,15 @@ input[type="datetime-local"].form-input {
             color: white;
             border: none;
             border-radius: 6px;
-            padding: 6px 12px;
-            font-size: 12px;
+            padding: 8px 15px;
+            font-size: 14px;
             cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .settings-edit-btn:hover {
+            background-color: #3399ff;
+            transform: translateY(-1px);
         }
         
         .logout-btn {
@@ -1235,7 +1258,6 @@ select {
 }
 
 
-
 /* 评价星级样式 */
 .rating-stars {
     display: flex;
@@ -1294,70 +1316,6 @@ select {
 
 .shake {
     animation: shake 0.5s ease-in-out;
-    /* 设置页面美化样式 */
-.settings-section {
-    margin-bottom: 25px;
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.settings-section h3 {
-    font-size: 18px;
-    margin-bottom: 20px;
-    color: #4da6ff;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #f0f8ff;
-    display: flex;
-    align-items: center;
-}
-
-.settings-section h3 i {
-    margin-right: 10px;
-    font-size: 20px;
-}
-
-.settings-item {
-    display: flex;
-    align-items: center;
-    padding: 15px;
-    background-color: #fafafa;
-    border-radius: 10px;
-    margin-bottom: 10px;
-    transition: all 0.3s;
-}
-
-.settings-item:hover {
-    background-color: #f0f8ff;
-    transform: translateY(-2px);
-}
-
-.settings-label {
-    flex: 1;
-    font-weight: 500;
-    color: #333;
-}
-
-.settings-value {
-    flex: 2;
-    color: #666;
-}
-
-.settings-edit-btn {
-    background-color: #4da6ff;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 15px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.settings-edit-btn:hover {
-    background-color: #3399ff;
-    transform: translateY(-1px);
 }
 
 /* 帮助与客服样式 */
@@ -1466,7 +1424,6 @@ select {
 .order-type-errand {
     background-color: #e6f7ed;
     color: #07c160;
-}
 }
 
     </style>
@@ -1905,7 +1862,25 @@ select {
                 <p>查看已完成的所有订单</p>
             </div>
     
+            <!-- 类型标签页 -->
+            <div class="order-tabs">
+                <button class="order-tab-btn active" onclick="switchCompletedTab('all')">
+                    <i class="fas fa-list"></i> 全部
+                </button>
+                <button class="order-tab-btn" onclick="switchCompletedTab('delivery')">
+                    <i class="fas fa-box"></i> 代取快递
+                </button>
+                <button class="order-tab-btn" onclick="switchCompletedTab('errand')">
+                    <i class="fas fa-running"></i> 跑腿任务
+                </button>
+            </div>
 
+            <div class="order-list" id="completed-orders-list">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> 加载中...
+                </div>
+            </div>
+        </div>
 
         <!-- 设置页面 -->
         <div id="settings-page" class="page">
@@ -1921,7 +1896,7 @@ select {
                 </div>
                 
                 <div class="settings-section">
-                    <h3>基本信息</h3>
+                    <h3><i class="fas fa-user"></i> 基本信息</h3>
                     <div class="settings-item">
                         <div class="settings-label">用户名</div>
                         <div class="settings-value" id="display-user-name">未设置</div>
@@ -1935,7 +1910,7 @@ select {
                 </div>
                 
                 <div class="settings-section">
-                    <h3>默认联系信息</h3>
+                    <h3><i class="fas fa-address-book"></i> 默认联系信息</h3>
                     <div class="settings-item">
                         <div class="settings-label">自动填充联系信息</div>
                         <div class="settings-value">
@@ -1976,60 +1951,60 @@ select {
                 </div>
 
                 <!-- 新增的帮助与客服部分 -->
-<div class="settings-section">
-    <h3><i class="fas fa-question-circle"></i> 帮助与客服</h3>
-    <div class="help-item" onclick="showHelp('如何使用代取快递服务？', '在代取快递页面，您可以发布代取订单或接取他人的订单。发布订单时，请填写详细的取件地址、送达地址、取件码和期望送达时间。接取订单后，请及时联系发布者确认细节。')">
-        <div class="help-icon">
-            <i class="fas fa-box"></i>
-        </div>
-        <div class="help-content">
-            <div class="help-title">如何使用代取快递服务？</div>
-            <div class="help-desc">了解代取快递服务的完整使用流程</div>
-        </div>
-        <div class="help-arrow">
-            <i class="fas fa-chevron-right"></i>
-        </div>
-    </div>
-    
-    <div class="help-item" onclick="showHelp('如何使用跑腿服务？', '在跑腿服务页面，您可以发布跑腿任务或接取他人的任务。发布任务时，请详细描述您的需求、取物地点、送达地点和期望完成时间。接取任务后，请及时联系发布者确认细节。')">
-        <div class="help-icon">
-            <i class="fas fa-running"></i>
-        </div>
-        <div class="help-content">
-            <div class="help-title">如何使用跑腿服务？</div>
-            <div class="help-desc">了解跑腿服务的完整使用流程</div>
-        </div>
-        <div class="help-arrow">
-            <i class="fas fa-chevron-right"></i>
-        </div>
-    </div>
-    
-    <div class="help-item" onclick="showHelp('订单状态说明', '待接单：订单已发布，等待接单；已接单：订单已被接取，配送中；已送达：物品已送达，等待确认；已完成：订单已完成；已取消：订单已被取消。')">
-        <div class="help-icon">
-            <i class="fas fa-info-circle"></i>
-        </div>
-        <div class="help-content">
-            <div class="help-title">订单状态说明</div>
-            <div class="help-desc">了解不同订单状态的含义</div>
-        </div>
-        <div class="help-arrow">
-            <i class="fas fa-chevron-right"></i>
-        </div>
-    </div>
-    
-    <div class="help-item" onclick="contactCustomerService()">
-        <div class="help-icon">
-            <i class="fas fa-headset"></i>
-        </div>
-        <div class="help-content">
-            <div class="help-title">联系客服</div>
-            <div class="help-desc">如有问题，请联系我们的客服团队</div>
-        </div>
-        <div class="help-arrow">
-            <i class="fas fa-chevron-right"></i>
-        </div>
-    </div>
-</div>
+                <div class="settings-section">
+                    <h3><i class="fas fa-question-circle"></i> 帮助与客服</h3>
+                    <div class="help-item" onclick="showHelp('如何使用代取快递服务？', '在代取快递页面，您可以发布代取订单或接取他人的订单。发布订单时，请填写详细的取件地址、送达地址、取件码和期望送达时间。接取订单后，请及时联系发布者确认细节。')">
+                        <div class="help-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="help-content">
+                            <div class="help-title">如何使用代取快递服务？</div>
+                            <div class="help-desc">了解代取快递服务的完整使用流程</div>
+                        </div>
+                        <div class="help-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="help-item" onclick="showHelp('如何使用跑腿服务？', '在跑腿服务页面，您可以发布跑腿任务或接取他人的任务。发布任务时，请详细描述您的需求、取物地点、送达地点和期望完成时间。接取任务后，请及时联系发布者确认细节。')">
+                        <div class="help-icon">
+                            <i class="fas fa-running"></i>
+                        </div>
+                        <div class="help-content">
+                            <div class="help-title">如何使用跑腿服务？</div>
+                            <div class="help-desc">了解跑腿服务的完整使用流程</div>
+                        </div>
+                        <div class="help-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="help-item" onclick="showHelp('订单状态说明', '待接单：订单已发布，等待接单；已接单：订单已被接取，配送中；已送达：物品已送达，等待确认；已完成：订单已完成；已取消：订单已被取消。')">
+                        <div class="help-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="help-content">
+                            <div class="help-title">订单状态说明</div>
+                            <div class="help-desc">了解不同订单状态的含义</div>
+                        </div>
+                        <div class="help-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="help-item" onclick="contactCustomerService()">
+                        <div class="help-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <div class="help-content">
+                            <div class="help-title">联系客服</div>
+                            <div class="help-desc">如有问题，请联系我们的客服团队</div>
+                        </div>
+                        <div class="help-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
                 
                 <button class="logout-btn" onclick="logout()">退出登录</button>
             </div>
