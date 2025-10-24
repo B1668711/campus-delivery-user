@@ -2199,7 +2199,7 @@ async function renderDeliveryOrders() {
                 if (order.status === 'taken' && (order.created_by === currentUser.id || order.taken_by === currentUser.id)) {
                     const badgeHTML = unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : '';
             orderHTML += `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'delivery')" style="position: relative;">
-                    <i class="fas fa-comments"></i> 联系对方
+                    联系对方
                     ${badgeHTML}
                 </button>`;
             }
