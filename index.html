@@ -2276,8 +2276,6 @@ if (order.status === 'taken' && order.taken_by === currentUser.id) {
                                  `<button class="action-btn btn-processing" onclick="startDelivery('${order.id}', 'errand')">开始任务</button>` : ''}
                             ${order.status === 'processing' && order.taken_by === currentUser.id ? 
                                 `<button class="action-btn btn-delivered" onclick="markAsDelivered('${order.id}', 'errand')">已送达</button>` : ''}
-                            ${order.status === 'processing' && order.taken_by === currentUser.id ? 
-                                `<button class="action-btn btn-delivered" onclick="markAsDelivered('${order.id}', 'errand')">已送达</button>` : ''}
                             ${order.status === 'delivered' && order.created_by === currentUser.id ? 
                                 `<button class="action-btn btn-confirm" onclick="confirmCompletion('${order.id}', 'errand')">确认完成</button>` : ''}
                             ${order.status === 'completed' ? 
