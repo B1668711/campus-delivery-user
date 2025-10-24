@@ -2347,14 +2347,22 @@ async function renderErrandOrders() {
                     <div class="order-status ${statusClass}">${statusText}</div>
                 </div>
                 <div class="order-details">
-                    <div class="order-detail"><strong>任务:</strong> ${order.title}</div>
-                    <div class="order-detail"><strong>描述:</strong> ${order.description}</div>
-                    <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
-                    <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
-                    <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
-                    <div class="order-detail"><strong>状态:</strong> ${statusText}</div>
-                    ${order.taken_by ? `<div class="order-detail"><strong>接单人:</strong> ${order.taker_name || '未知用户'}</div>` : ''}
-                </div>
+    <div class="order-detail"><strong>任务:</strong> ${order.title}</div>
+    <div class="order-detail"><strong>描述:</strong> ${order.description}</div>
+    <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
+    <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
+    <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+    <div class="order-detail"><strong>状态:</strong> ${statusText}</div>
+    
+    ${order.taken_by ? `
+        <div class="order-detail"><strong>接单人:</strong> ${order.taker_name || '未知用户'}</div>
+        <div class="order-detail"><strong>联系人:</strong> ${order.contact_name}</div>
+        <div class="order-detail"><strong>联系方式:</strong> ${order.contact_info}</div>
+    ` : `
+        <div class="order-detail"><strong>联系人:</strong> ${order.contact_name}</div>
+        <div class="order-detail"><strong>联系方式:</strong> <span style="color: #999;">接单后显示</span></div>
+    `}
+</div>
                 <div class="order-actions">
                     ${order.status === 'taken' && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
                         `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'errand')" style="position: relative;">
@@ -4399,28 +4407,30 @@ function closeChat() {
                         `}
                         
                         <div class="order-detail-section">
-                            <h4>联系人信息</h4>
-                            <div class="order-detail-info">
-                                <div class="order-detail-item">
-                                    <span class="order-detail-label">发布者：</span>
-                                    <span class="order-detail-value">${order.contact_name}</span>
-                                </div>
-                                <div class="order-detail-item">
-                                    <span class="order-detail-label">联系方式：</span>
-                                    <span class="order-detail-value">${order.contact_info}</span>
-                                </div>
-                                ${order.taken_by ? `
-                                    <div class="order-detail-item">
-                                        <span class="order-detail-label">接单者：</span>
-                                        <span class="order-detail-value">${order.taker_name}</span>
-                                    </div>
-                                    <div class="order-detail-item">
-                                        <span class="order-detail-label">接单者联系方式：</span>
-                                        <span class="order-detail-value">${order.taker_contact}</span>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
+    <h4>联系人信息</h4>
+    <div class="order-detail-info">
+        <div class="order-detail-item">
+            <span class="order-detail-label">发布者：</span>
+            <span class="order-detail-value">${order.contact_name}</span>
+        </div>
+        <div class="order-detail-item">
+            <span class="order-detail-label">联系方式：</span>
+            <span class="order-detail-value">
+                ${order.taken_by ? order.contact_info : '<span style="color: #999;">接单后显示</span>'}
+            </span>
+        </div>
+        ${order.taken_by ? `
+            <div class="order-detail-item">
+                <span class="order-detail-label">接单者：</span>
+                <span class="order-detail-value">${order.taker_name}</span>
+            </div>
+            <div class="order-detail-item">
+                <span class="order-detail-label">接单者联系方式：</span>
+                <span class="order-detail-value">${order.taker_contact}</span>
+            </div>
+        ` : ''}
+    </div>
+</div>
                         
                         ${order.notes ? `
                             <div class="order-detail-section">
