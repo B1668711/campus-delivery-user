@@ -17,18 +17,23 @@
         }
         
         body {
-            background-color: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
-            padding-bottom: 60px;
-            -webkit-overflow-scrolling: touch;
-        }
-        
+    background-color: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
         .container {
-            max-width: 100%;
-            margin: 0 auto;
-            padding: 15px;
-        }
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 15px;
+    padding-bottom: 80px; /* 增加这行 - 确保内容不被底部导航栏遮挡 */
+    min-height: calc(100vh - 120px); /* 增加这行 - 确保容器有最小高度 */
+    position: relative;
+    z-index: 1;
+}
         
         .navbar {
             background: linear-gradient(135deg, #4da6ff, #3399ff);
@@ -47,17 +52,18 @@
         }
         
         .tab-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: white;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-            z-index: 100;
-        }
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000; /* 只修改这一行 - 提高z-index确保在最上层 */
+}
+        
         
         .tab-item {
             display: flex;
@@ -249,12 +255,15 @@
         }
         
         .page {
-            display: none;
-        }
-        
-        .page.active {
-            display: block;
-        }
+    display: none;
+    width: 100%;
+    min-height: calc(100vh - 120px); /* 增加这行 - 确保每个页面有足够的高度 */
+}
+
+.page.active {
+    display: block;
+    animation: fadeIn 0.3s ease-in-out; /* 增加这行 - 添加淡入效果 */
+}
         
         .empty-state {
             text-align: center;
@@ -1028,10 +1037,22 @@ input[type="datetime-local"].form-input {
 
         /* 移动端优化样式 */
         @media (max-width: 768px) {
-    .status-filter-tabs {
-        flex-wrap: wrap;
-        padding: 6px;
-        gap: 6px;
+    .container {
+        padding: 10px;
+        padding-bottom: 70px; /* 移动端调整底部内边距 */
+    }
+    
+    .page {
+        min-height: calc(100vh - 110px); /* 移动端调整最小高度 */
+    }
+    
+    /* 在超小屏幕上进一步调整 */
+    @media (max-width: 360px) {
+        .status-filter-btn {
+            min-width: 55px;
+            padding: 6px 8px;
+            font-size: 11px;
+        }
     }
     
     .status-filter-btn {
@@ -1427,6 +1448,12 @@ select {
 .order-type-errand {
     background-color: #e6f7ed;
     color: #07c160;
+}
+
+/* 添加淡入动画 */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
     </style>
@@ -3703,44 +3730,66 @@ function closeChat() {
             }
         }
 
-        // 页面切换函数
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
-            });
-            document.getElementById(pageId).classList.add('active');
-            
-            // 更新底部导航激活状态
-            document.querySelectorAll('.tab-item').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            if (pageId === 'main-page') {
-                document.getElementById('navbar-title').textContent = '校园服务平台';
-                document.querySelectorAll('.tab-item')[0].classList.add('active');
-                updateMainPageStats();
-            } else if (pageId === 'delivery-home-page') {
-                document.querySelectorAll('.tab-item')[1].classList.add('active');
-            } else if (pageId === 'errand-home-page') {
-                document.querySelectorAll('.tab-item')[2].classList.add('active');
-            } else if (pageId === 'chat-home-page') {
-                document.getElementById('navbar-title').textContent = '我的聊天';
-                document.querySelectorAll('.tab-item')[3].classList.add('active');
-                renderChatHome();
-            } else if (pageId === 'settings-page') {
-                document.querySelectorAll('.tab-item')[4].classList.add('active');
-                updateUserDisplay();
-            }
-            
-            // 自动填充联系信息
-            if (pageId === 'order-page' || pageId === 'take-order-page' || 
-                pageId === 'errand-order-page' || pageId === 'take-errand-page') {
-                autoFillContactInfo();
-            }
-            
-            // 每次切换页面都更新未读徽章
-            updateTabUnreadBadge();
-        }
+        // 页面切换函数 - 修复版本
+function showPage(pageId) {
+    // 确保页面存在
+    const targetPage = document.getElementById(pageId);
+    if (!targetPage) {
+        console.error('页面不存在:', pageId);
+        return;
+    }
+    
+    // 隐藏所有页面
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+        page.style.display = 'none'; // 确保隐藏
+    });
+    
+    // 显示目标页面
+    targetPage.classList.add('active');
+    targetPage.style.display = 'block'; // 确保显示
+    
+    // 更新底部导航激活状态
+    document.querySelectorAll('.tab-item').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // 根据页面ID更新导航状态
+    if (pageId === 'main-page') {
+        document.getElementById('navbar-title').textContent = '校园服务平台';
+        document.querySelectorAll('.tab-item')[0].classList.add('active');
+        updateMainPageStats();
+    } else if (pageId === 'delivery-home-page') {
+        document.querySelectorAll('.tab-item')[1].classList.add('active');
+    } else if (pageId === 'errand-home-page') {
+        document.querySelectorAll('.tab-item')[2].classList.add('active');
+    } else if (pageId === 'chat-home-page') {
+        document.getElementById('navbar-title').textContent = '我的聊天';
+        document.querySelectorAll('.tab-item')[3].classList.add('active');
+        renderChatHome();
+    } else if (pageId === 'settings-page') {
+        document.querySelectorAll('.tab-item')[4].classList.add('active');
+        updateUserDisplay();
+    } else if (pageId === 'my-orders-page') {
+        document.getElementById('navbar-title').textContent = '我的订单';
+        // 我的订单页面没有对应的底部导航项，保持当前激活状态
+    } else if (pageId === 'completed-orders-page') {
+        document.getElementById('navbar-title').textContent = '已完成订单';
+        // 已完成订单页面没有对应的底部导航项，保持当前激活状态
+    }
+    
+    // 自动填充联系信息
+    if (pageId === 'order-page' || pageId === 'take-order-page' || 
+        pageId === 'errand-order-page' || pageId === 'take-errand-page') {
+        autoFillContactInfo();
+    }
+    
+    // 每次切换页面都更新未读徽章
+    updateTabUnreadBadge();
+    
+    // 滚动到顶部
+    window.scrollTo(0, 0);
+}
             
         // 初始化事件监听器
         function initEventListeners() {
