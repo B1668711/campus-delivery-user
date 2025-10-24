@@ -890,25 +890,27 @@ input[type="datetime-local"].form-input {
     max-width: 500px;
     max-height: 80%;
     border-radius: 12px;
-    overflow-y: auto; /* 确保内容可滚动 */
-    padding: 20px;
+    overflow-y: auto; /* 恢复滚动 */
+    padding: 0; /* 移除内边距，由内部元素控制 */
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    position: relative; /* 新增，为sticky定位提供参考 */
 }
 
-       .order-detail-header {
+.order-detail-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
+    padding: 15px 20px;
     border-bottom: 1px solid #e0e0e0;
-    position: sticky; /* 新增 */
-    top: 0; /* 新增 */
-    background: white; /* 新增 */
-    z-index: 10; /* 新增 */
-    padding: 15px 20px; /* 调整内边距 */
-    margin: -20px -20px 15px -20px; /* 调整外边距以匹配容器 */
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    margin-bottom: 0; /* 确保没有额外的下边距 */
+}
+
+.order-detail-body {
+    padding: 0 20px 20px; /* 恢复两侧和底部的间隙 */
+    /* 不需要设置高度，由内容自然撑开 */
 }
 
         .order-detail-title {
