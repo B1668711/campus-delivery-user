@@ -1536,6 +1536,37 @@ select {
     }
 }
 
+/* ========== 新增：安卓设备滑动修复 ========== */
+/* 安卓设备滑动修复 */
+@media (max-width: 768px) and (orientation: portrait) {
+    /* 检测安卓设备 */
+    body.android-fix {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        position: relative;
+        height: auto;
+        min-height: 100vh;
+    }
+    
+    .container.android-fix {
+        overflow-y: visible !important;
+        height: auto;
+        min-height: calc(100vh - 120px);
+    }
+    
+    .page.android-fix {
+        overflow-y: visible !important;
+        height: auto;
+        min-height: calc(100vh - 120px);
+    }
+    
+    .page.active.android-fix {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+/* ========== 安卓设备滑动修复结束 ========== */
+
     </style>
 </head>
 <body>
@@ -2146,6 +2177,30 @@ select {
     </div>
 
     <script>
+        
+        // ========== 新增：安卓设备检测和修复 ==========
+// 检测安卓设备并添加修复类
+function detectAndroid() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isAndroid = userAgent.indexOf("android") > -1;
+    
+    if (isAndroid) {
+        document.body.classList.add('android-fix');
+        document.querySelector('.container').classList.add('android-fix');
+        document.querySelectorAll('.page').forEach(page => {
+            page.classList.add('android-fix');
+        });
+        
+        console.log('安卓设备检测到，已应用滑动修复');
+    }
+}
+
+// 页面加载完成后执行安卓检测
+document.addEventListener('DOMContentLoaded', function() {
+    detectAndroid();
+});
+// ========== 安卓设备检测和修复结束 ==========
+        
         // Supabase 配置
         const SUPABASE_URL = 'https://mdkvoofsjmwxwsfoudbz.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ka3Zvb2Zzam13eHdzZm91ZGJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4ODE2NTgsImV4cCI6MjA3NjQ1NzY1OH0.KXwS4CWYM5RIJ9RzQAVwAn9f1qvDBHykbil0CVykFP8';
