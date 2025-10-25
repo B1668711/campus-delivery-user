@@ -594,14 +594,15 @@ input[type="datetime-local"].form-input {
         }
         
         .settings-item {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            background-color: #fafafa;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            transition: all 0.3s;
-        }
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: #fafafa;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    transition: all 0.3s;
+    flex-wrap: nowrap; /* 新增这一行 - 确保不换行 */
+}
         
         .settings-item:hover {
             background-color: #f0f8ff;
@@ -609,10 +610,12 @@ input[type="datetime-local"].form-input {
         }
         
         .settings-label {
-            flex: 1;
-            font-weight: 500;
-            color: #333;
-        }
+    flex: 1;
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap; /* 新增这一行 - 强制不换行 */
+    min-width: 120px; /* 新增这一行 - 设置最小宽度确保文字完整显示 */
+}
         
         .settings-value {
             flex: 2;
@@ -771,6 +774,19 @@ input[type="datetime-local"].form-input {
         margin-right: 3px;
         font-size: 11px;
     }
+        /* 新增设置页面移动端适配 */
+    .settings-item {
+        flex-wrap: nowrap; /* 移动端也不换行 */
+        min-width: 0; /* 允许在非常小的屏幕上缩小 */
+    }
+    
+    .settings-label {
+        min-width: 100px; /* 移动端稍小的最小宽度 */
+        font-size: 14px; /* 稍小的字体 */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis; /* 如果实在放不下显示省略号 */
+    }
 }
 
 /* 在超小屏幕上进一步调整 */
@@ -784,6 +800,15 @@ input[type="datetime-local"].form-input {
     .contact-type-btn i {
         margin-right: 2px;
         font-size: 10px;
+    }
+        /* 新增设置页面超小屏幕适配 */
+    .settings-label {
+        min-width: 90px;
+        font-size: 13px;
+    }
+    
+    .settings-item {
+        padding: 12px 10px;
     }
 }
         
