@@ -715,33 +715,77 @@ input[type="datetime-local"].form-input {
         
         /* 联系方式选择器样式 */
         .contact-type-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .contact-type-btn {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #e0e0e0;
-            background-color: white;
-            color: #666;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-        }
-        
-        .contact-type-btn.active {
-            background-color: #4da6ff;
-            color: white;
-            border-color: #4da6ff;
-        }
-        
-        .contact-type-btn i {
-            margin-right: 5px;
-        }
+    display: flex;
+    justify-content: space-between; /* 改为均分排布 */
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.contact-type-btn {
+    flex: 1; /* 每个按钮均分可用空间 */
+    margin: 0 4px; /* 使用margin控制间距 */
+    padding: 10px 5px; /* 调整内边距 */
+    border: 1px solid #e0e0e0;
+    background-color: white;
+    color: #666;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    white-space: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 移除第一个和最后一个按钮的多余外边距 */
+.contact-type-btn:first-child {
+    margin-left: 0;
+}
+
+.contact-type-btn:last-child {
+    margin-right: 0;
+}
+
+.contact-type-btn.active {
+    background-color: #4da6ff;
+    color: white;
+    border-color: #4da6ff;
+}
+
+.contact-type-btn i {
+    margin-right: 4px;
+    font-size: 12px;
+}
+
+/* 在移动端进一步优化 */
+@media (max-width: 768px) {
+    .contact-type-btn {
+        padding: 8px 4px;
+        font-size: 12px;
+        margin: 0 3px;
+    }
+    
+    .contact-type-btn i {
+        margin-right: 3px;
+        font-size: 11px;
+    }
+}
+
+/* 在超小屏幕上进一步调整 */
+@media (max-width: 360px) {
+    .contact-type-btn {
+        padding: 6px 3px;
+        font-size: 11px;
+        margin: 0 2px;
+    }
+    
+    .contact-type-btn i {
+        margin-right: 2px;
+        font-size: 10px;
+    }
+}
         
         /* 聊天模态框样式 */
         .chat-message {
@@ -2324,6 +2368,38 @@ select {
         let unreadUpdateInterval = null;
         let notificationPermission = false;
 
+        // ==================== 联系信息验证函数 ====================
+function validateContactInfo(contactType, contactInfo) {
+    // 移除空格
+    contactInfo = contactInfo.trim();
+    
+    if (contactType === 'wechat') {
+        // 微信：6位字符及以上（字母、数字，可以组合）
+        const wechatRegex = /^[a-zA-Z0-9]{6,}$/;
+        if (!wechatRegex.test(contactInfo)) {
+            alert('微信账号格式不正确！\n\n请填写6位及以上字符的微信账号.');
+            return false;
+        }
+    } else if (contactType === 'phone') {
+        // 手机号：11位数字，覆盖所有运营商号段
+        const phoneRegex = /^1(3[0-9]|4[0-9]|5[0-9]|6[0-9]|7[0-9]|8[0-9]|9[0-9])[0-9]{8}$/;
+        if (!phoneRegex.test(contactInfo)) {
+            alert('手机号格式不正确！\n\n请填写11位有效的手机号码.');
+            return false;
+        }
+    } else if (contactType === 'qq') {
+        // QQ：6-10位数字
+        const qqRegex = /^[0-9]{6,10}$/;
+        if (!qqRegex.test(contactInfo)) {
+            alert('QQ号格式不正确！\n\n请填写6-10位纯数字的QQ账号');
+            return false;
+        }
+    }
+    
+    return true;
+}
+// ==================== 联系信息验证函数结束 ====================
+
         // 生成设备唯一标识
         function generateDeviceId() {
             let deviceId = localStorage.getItem('deviceId');
@@ -2686,12 +2762,23 @@ function updateUserDisplay() {
         // 保存默认信息 - 更新版本
 async function saveDefaultInfo() {
     const autoFill = document.getElementById('auto-fill-toggle').checked;
-    const contactInfo = document.getElementById('default-contact-info').value;
+    const contactInfo = document.getElementById('default-contact-info').value.trim();
     const address = document.getElementById('default-address').value;
     
     // 获取默认联系方式类型
     const activeContactBtn = document.querySelector('#settings-page .contact-type-btn.active');
     const defaultContactType = activeContactBtn ? activeContactBtn.dataset.type : 'wechat';
+    
+    // 验证默认联系信息
+    if (contactInfo) {
+        if (!validateContactInfo(defaultContactType, contactInfo)) {
+            // 询问用户是否仍然保存（即使格式不正确）
+            const stillSave = confirm('您填写的联系信息格式不正确，这可能会导致自动填充功能无法正常工作。\n\n您确定要继续保存吗？');
+            if (!stillSave) {
+                return; // 用户选择不保存
+            }
+        }
+    }
     
     await saveUser({
         autoFillContact: autoFill,
@@ -2700,63 +2787,153 @@ async function saveDefaultInfo() {
         defaultAddress: address
     });
     
-    alert('默认信息已保存！');
+    // 重置警告状态，让用户下次可以再次看到警告（如果需要）
+    sessionStorage.removeItem('defaultContactWarningShown');
+    
+    // ========== 新增：保存成功后的视觉反馈 ==========
+    const saveBtn = document.querySelector('#settings-page .settings-edit-btn');
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = '✓ 已保存';
+    saveBtn.style.background = '#07c160';
+    
+    setTimeout(() => {
+        saveBtn.textContent = originalText;
+        saveBtn.style.background = '';
+    }, 2000);
+    // ========== 新增结束 ==========
+    
+    // 不再需要弹窗提示，因为有视觉反馈了
+    // alert('默认信息已保存！');
 }
 
         // 自动填充联系信息
-        function autoFillContactInfo() {
-            if (!currentUser.autoFillContact) return;
-            
-            // 填充代取快递发布页
-            if (currentUser.defaultContactInfo) {
-                document.getElementById('contact-info').value = currentUser.defaultContactInfo;
-                document.getElementById('errand-contact-info').value = currentUser.defaultContactInfo;
-            }
-            
-            // 填充代取快递领取页
-            document.getElementById('taker-contact-info').value = currentUser.defaultContactInfo || '';
-            
-            // 填充跑腿领取页
-            document.getElementById('errand-taker-contact-info').value = currentUser.defaultContactInfo || '';
-            
-            // 填充姓名
-            if (currentUser.name) {
-                document.getElementById('contact-name').value = currentUser.name;
-                document.getElementById('errand-contact-name').value = currentUser.name;
-                document.getElementById('taker-name').value = currentUser.name;
-                document.getElementById('errand-taker-name').value = currentUser.name;
-            }
-            
-            // 填充地址
-            if (currentUser.defaultAddress) {
-                document.getElementById('delivery-address').value = currentUser.defaultAddress;
-                document.getElementById('errand-delivery').value = currentUser.defaultAddress;
-            }
-            
-            // 填充联系方式类型
-            const contactTypeBtns = document.querySelectorAll('.contact-type-btn');
-            contactTypeBtns.forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.type === currentUser.defaultContactType) {
-                    btn.classList.add('active');
-                }
-            });
+function autoFillContactInfo() {
+    if (!currentUser.autoFillContact) return;
+    
+    // 检查默认联系信息是否有效
+    const isDefaultContactValid = validateDefaultContactInfo();
+    if (!isDefaultContactValid) {
+        console.log('默认联系信息不符合规范，跳过自动填充');
+        
+        // 显示提醒弹窗
+        showDefaultContactWarning();
+        return;
+    }
+    
+    // 填充代取快递发布页
+    if (currentUser.defaultContactInfo) {
+        document.getElementById('contact-info').value = currentUser.defaultContactInfo;
+        document.getElementById('errand-contact-info').value = currentUser.defaultContactInfo;
+    }
+    
+    // 填充代取快递领取页
+    document.getElementById('taker-contact-info').value = currentUser.defaultContactInfo || '';
+    
+    // 填充跑腿领取页
+    document.getElementById('errand-taker-contact-info').value = currentUser.defaultContactInfo || '';
+    
+    // 填充姓名
+    if (currentUser.name) {
+        document.getElementById('contact-name').value = currentUser.name;
+        document.getElementById('errand-contact-name').value = currentUser.name;
+        document.getElementById('taker-name').value = currentUser.name;
+        document.getElementById('errand-taker-name').value = currentUser.name;
+    }
+    
+    // 填充地址
+    if (currentUser.defaultAddress) {
+        document.getElementById('delivery-address').value = currentUser.defaultAddress;
+        document.getElementById('errand-delivery').value = currentUser.defaultAddress;
+    }
+    
+    // 填充联系方式类型
+    const contactTypeBtns = document.querySelectorAll('.contact-type-btn');
+    contactTypeBtns.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.type === currentUser.defaultContactType) {
+            btn.classList.add('active');
         }
+    });
+}
 
+// 显示默认联系信息不符合规范的警告
+function showDefaultContactWarning() {
+    // 检查是否已经在当前会话中显示过警告
+    const warningShown = sessionStorage.getItem('defaultContactWarningShown');
+    if (warningShown) {
+        return; // 已经显示过，不再重复显示
+    }
+    
+    const userChoice = confirm(
+        '⚠️ 默认联系信息不符合规范\n\n' +
+        '您的默认联系信息格式不正确，自动填充功能已禁用。\n\n' +
+        '点击"确定"跳转到设置页面修改默认信息\n' +
+        '点击"取消"继续手动填写当前表单'
+    );
+    
+    if (userChoice) {
+        // 用户选择跳转到设置页面
+        sessionStorage.setItem('defaultContactWarningShown', 'true');
+        showPage('settings-page');
+        
+        // 延迟聚焦到默认联系信息输入框
+        setTimeout(() => {
+            const contactInput = document.getElementById('default-contact-info');
+            if (contactInput) {
+                contactInput.focus();
+                contactInput.select(); // 选中文本，方便用户修改
+            }
+        }, 500);
+    } else {
+        // 用户选择暂时不修改，标记已显示过警告
+        sessionStorage.setItem('defaultContactWarningShown', 'true');
+    }
+}
+// 验证默认联系信息是否有效
+function validateDefaultContactInfo() {
+    if (!currentUser.defaultContactInfo || !currentUser.defaultContactType) {
+        return false;
+    }
+    
+    const contactType = currentUser.defaultContactType;
+    const contactInfo = currentUser.defaultContactInfo.trim();
+    
+    if (contactType === 'wechat') {
+        // 微信：6位字符及以上（字母、数字，可以组合）
+        const wechatRegex = /^[a-zA-Z0-9]{6,}$/;
+        return wechatRegex.test(contactInfo);
+    } else if (contactType === 'phone') {
+        // 手机号：11位数字，覆盖所有运营商号段
+        const phoneRegex = /^1(3[0-9]|4[0-9]|5[0-9]|6[0-9]|7[0-9]|8[0-9]|9[0-9])[0-9]{8}$/;
+        return phoneRegex.test(contactInfo);
+    } else if (contactType === 'qq') {
+        // QQ：6-10位数字
+        const qqRegex = /^[0-9]{6,10}$/;
+        return qqRegex.test(contactInfo);
+    }
+    
+    return false;
+}
         // 联系方式类型选择
-        function initContactTypeSelectors() {
-            document.querySelectorAll('.contact-type-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    // 移除同组其他按钮的active类
-                    const parent = this.closest('.contact-type-selector');
-                    parent.querySelectorAll('.contact-type-btn').forEach(b => {
-                        b.classList.remove('active');
-                    });
-                    // 为当前按钮添加active类
-                    this.classList.add('active');
-                });
+function initContactTypeSelectors() {
+    document.querySelectorAll('.contact-type-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // 移除同组其他按钮的active类
+            const parent = this.closest('.contact-type-selector');
+            parent.querySelectorAll('.contact-type-btn').forEach(b => {
+                b.classList.remove('active');
             });
-        }
+            // 为当前按钮添加active类
+            this.classList.add('active');
+            
+            // ========== 新增：在设置页面切换类型时更新验证状态 ==========
+            if (parent.closest('#settings-page')) {
+                updateDefaultContactValidity();
+            }
+            // ========== 新增结束 ==========
+        });
+    });
+}
 
         // 获取当前选中的联系方式类型
         function getSelectedContactType(containerId) {
@@ -3748,6 +3925,12 @@ async function startDelivery(orderId, orderType) {
                 alert('请填写所有必填字段！');
                 return;
             }
+
+                // ========== 新增：验证联系信息 ==========
+    if (!validateContactInfo(contactType, contactInfo)) {
+        return;
+    }
+    // ========== 新增结束 ==========
             
             // 验证物品类型
             let finalItemType = itemType;
@@ -3837,6 +4020,12 @@ async function startDelivery(orderId, orderType) {
                 alert('请填写所有必填字段！');
                 return;
             }
+
+                // ========== 新增：验证联系信息 ==========
+    if (!validateContactInfo(contactType, contactInfo)) {
+        return;
+    }
+    // ========== 新增结束 ==========
             
             try {
                 const newOrder = {
@@ -4270,6 +4459,12 @@ function showPage(pageId) {
                     alert('请填写您的姓名和联系方式！');
                     return;
                 }
+
+                    // ========== 新增：验证联系信息 ==========
+    if (!validateContactInfo(contactType, takerContactInfo)) {
+        return;
+    }
+    // ========== 新增结束 ==========
                 
                 saveUser({
                     name: takerName,
@@ -4292,6 +4487,12 @@ function showPage(pageId) {
                     alert('请填写您的姓名和联系方式！');
                     return;
                 }
+
+                    // ========== 新增：验证联系信息 ==========
+    if (!validateContactInfo(contactType, takerContactInfo)) {
+        return;
+    }
+    // ========== 新增结束 ==========
                 
                 saveUser({
                     name: takerName,
@@ -4705,10 +4906,194 @@ async function initApp() {
     } catch (error) {
         console.error('初始化未读徽章失败:', error);
     }
+
+        // 第十一步：初始化实时验证
+    console.log('正在初始化实时验证...');
+    initRealTimeValidation();
+
+    // ==================== 联系信息验证函数 ====================
+function validateContactInfo(contactType, contactInfo) {
+    // ... 您之前添加的验证函数代码
+}
+// ==================== 联系信息验证函数结束 ====================
+
+// ==================== 实时验证功能 ====================
+function initRealTimeValidation() {
+    // 为所有联系方式输入框添加输入事件监听
+    const contactInputs = [
+        'contact-info', 'errand-contact-info', 
+        'taker-contact-info', 'errand-taker-contact-info',
+        'default-contact-info'  // 设置页面的默认联系信息输入框
+    ];
+    
+    contactInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('blur', function() {
+                // 获取对应的联系方式类型
+                let contactType = 'wechat'; // 默认值
+                const container = this.closest('.page');
+                if (container) {
+                    const activeBtn = container.querySelector('.contact-type-btn.active');
+                    if (activeBtn) {
+                        contactType = activeBtn.dataset.type;
+                    }
+                }
+                
+                // 验证输入
+                if (this.value.trim()) {
+                    validateContactInfo(contactType, this.value.trim());
+                }
+            });
+        }
+    });
+    
+    console.log('实时验证初始化完成');
+}
+// ==================== 实时验证功能结束 ====================
+
+// 第十一步：初始化实时验证
+console.log('正在初始化实时验证...');
+initRealTimeValidation();
+
+// 第十二步：初始化设置页面验证
+console.log('正在初始化设置页面验证...');
+initSettingsPageValidation();
+
+// ==================== 设置页面视觉提示功能 ====================
+// 专门用于验证特定联系信息的函数（不弹出提示，仅返回布尔值）
+function validateDefaultContactInfoSpecific(contactType, contactInfo) {
+    contactInfo = contactInfo.trim();
+    
+    if (contactType === 'wechat') {
+        const wechatRegex = /^[a-zA-Z0-9]{6,}$/;
+        return wechatRegex.test(contactInfo);
+    } else if (contactType === 'phone') {
+        const phoneRegex = /^1(3[0-9]|4[0-9]|5[0-9]|6[0-9]|7[0-9]|8[0-9]|9[0-9])[0-9]{8}$/;
+        return phoneRegex.test(contactInfo);
+    } else if (contactType === 'qq') {
+        const qqRegex = /^[0-9]{6,10}$/;
+        return qqRegex.test(contactInfo);
+    }
+    
+    return false;
+}
+
+// 更新默认联系信息有效性提示
+function updateDefaultContactValidity() {
+    const contactInfo = document.getElementById('default-contact-info').value.trim();
+    const activeContactBtn = document.querySelector('#settings-page .contact-type-btn.active');
+    const contactType = activeContactBtn ? activeContactBtn.dataset.type : 'wechat';
+    
+    const isValid = contactInfo ? validateDefaultContactInfoSpecific(contactType, contactInfo) : false;
+    
+    const input = document.getElementById('default-contact-info');
+    if (contactInfo) {
+        if (isValid) {
+            input.style.borderColor = '#07c160';
+            input.style.boxShadow = '0 0 0 2px rgba(7, 193, 96, 0.2)';
+        } else {
+            input.style.borderColor = '#ff4757';
+            input.style.boxShadow = '0 0 0 2px rgba(255, 71, 87, 0.2)';
+        }
+    } else {
+        input.style.borderColor = '#e0e0e0';
+        input.style.boxShadow = 'none';
+    }
+}
+// ==================== 设置页面视觉提示功能结束 ====================
     
     // 显示初始化完成状态
     showInitializationComplete();
 }
+
+// ==================== 设置页面视觉提示功能 ====================
+// 专门用于验证特定联系信息的函数（不弹出提示，仅返回布尔值）
+function validateDefaultContactInfoSpecific(contactType, contactInfo) {
+    contactInfo = contactInfo.trim();
+    
+    if (contactType === 'wechat') {
+        const wechatRegex = /^[a-zA-Z0-9]{6,}$/;
+        return wechatRegex.test(contactInfo);
+    } else if (contactType === 'phone') {
+        const phoneRegex = /^1(3[0-9]|4[0-9]|5[0-9]|6[0-9]|7[0-9]|8[0-9]|9[0-9])[0-9]{8}$/;
+        return phoneRegex.test(contactInfo);
+    } else if (contactType === 'qq') {
+        const qqRegex = /^[0-9]{6,10}$/;
+        return qqRegex.test(contactInfo);
+    }
+    
+    return false;
+}
+
+// 更新默认联系信息有效性提示
+function updateDefaultContactValidity() {
+    const contactInfo = document.getElementById('default-contact-info');
+    if (!contactInfo) return;
+    
+    const contactValue = contactInfo.value.trim();
+    const activeContactBtn = document.querySelector('#settings-page .contact-type-btn.active');
+    const contactType = activeContactBtn ? activeContactBtn.dataset.type : 'wechat';
+    
+    const isValid = contactValue ? validateDefaultContactInfoSpecific(contactType, contactValue) : false;
+    
+    if (contactValue) {
+        if (isValid) {
+            contactInfo.style.borderColor = '#07c160';
+            contactInfo.style.boxShadow = '0 0 0 2px rgba(7, 193, 96, 0.2)';
+        } else {
+            contactInfo.style.borderColor = '#ff4757';
+            contactInfo.style.boxShadow = '0 0 0 2px rgba(255, 71, 87, 0.2)';
+        }
+    } else {
+        contactInfo.style.borderColor = '#e0e0e0';
+        contactInfo.style.boxShadow = 'none';
+    }
+}
+
+// ==================== 设置页面验证初始化 ====================
+function initSettingsPageValidation() {
+    const defaultContactInput = document.getElementById('default-contact-info');
+    if (defaultContactInput) {
+        // 输入时实时验证
+        defaultContactInput.addEventListener('input', updateDefaultContactValidity);
+        
+        // 初始加载时验证一次
+        updateDefaultContactValidity();
+    }
+    
+    // 为设置页面的联系方式类型按钮添加点击事件
+    const settingsContactBtns = document.querySelectorAll('#settings-page .contact-type-btn');
+    settingsContactBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // 延迟一点时间，确保类型已经切换
+            setTimeout(updateDefaultContactValidity, 100);
+        });
+    });
+}
+// ==================== 设置页面验证初始化结束 ====================
+
+// ==================== 设置页面验证初始化 ====================
+function initSettingsPageValidation() {
+    const defaultContactInput = document.getElementById('default-contact-info');
+    if (defaultContactInput) {
+        // 输入时实时验证
+        defaultContactInput.addEventListener('input', updateDefaultContactValidity);
+        
+        // 初始加载时验证一次
+        updateDefaultContactValidity();
+    }
+    
+    // 为设置页面的联系方式类型按钮添加点击事件
+    const settingsContactBtns = document.querySelectorAll('#settings-page .contact-type-btn');
+    settingsContactBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // 延迟一点时间，确保类型已经切换
+            setTimeout(updateDefaultContactValidity, 100);
+        });
+    });
+}
+// ==================== 设置页面验证初始化结束 ====================
 
         // 显示我的订单页面
         function showMyOrders() {
@@ -5668,4 +6053,5 @@ function applyFilters() {
     </script>
 </body>
 </html>
+
 
