@@ -1536,36 +1536,120 @@ select {
     }
 }
 
-/* ========== 新增：安卓设备滑动修复 ========== */
-/* 安卓设备滑动修复 */
-@media (max-width: 768px) and (orientation: portrait) {
-    /* 检测安卓设备 */
-    body.android-fix {
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch !important;
+/* ========== 安卓设备滑动修复增强版 ========== */
+/* 检测安卓设备并应用修复 */
+@media (max-width: 768px) {
+    body.android {
         position: relative;
-        height: auto;
-        min-height: 100vh;
+        height: 100%;
+        overflow: hidden;
     }
     
-    .container.android-fix {
-        overflow-y: visible !important;
-        height: auto;
-        min-height: calc(100vh - 120px);
+    .container.android {
+        height: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        position: relative;
     }
     
-    .page.android-fix {
-        overflow-y: visible !important;
-        height: auto;
-        min-height: calc(100vh - 120px);
-    }
-    
-    .page.active.android-fix {
+    .page.android {
+        min-height: 100%;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
+    
+    .page.active.android {
+        display: block;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* 修复滚动容器 */
+    .order-list, #delivery-orders-list, #errand-orders-list, 
+    #my-orders-list, #completed-orders-list, #active-chat-orders, 
+    #completed-chat-orders, #available-orders-list, #available-errands-list {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        max-height: none;
+    }
+}
+
+/* 确保所有可滚动区域都能正常滑动 */
+.order-list, .chat-messages, .order-detail-body {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
 }
 /* ========== 安卓设备滑动修复结束 ========== */
+
+/* ========== 底部导航栏遮挡修复 ========== */
+/* 为所有页面容器添加足够的底部内边距 */
+.container {
+    padding-bottom: 120px !important; /* 增加底部内边距确保内容不被遮挡 */
+}
+
+/* 为各个页面的底部按钮区域添加额外间距 */
+.page:not(#settings-page) .order-actions:last-child,
+.page:not(#settings-page) .card:last-child,
+.page:not(#settings-page) .btn:last-child {
+    margin-bottom: 40px; /* 为底部按钮添加额外间距 */
+}
+
+/* 特定页面的底部按钮调整 */
+#delivery-home-page .card:last-child,
+#errand-home-page .card:last-child,
+#chat-home-page .card:last-child,
+#my-orders-page .card:last-child,
+#completed-orders-page .card:last-child {
+    margin-bottom: 30px;
+}
+
+/* 发布订单页面的底部按钮调整 */
+#order-page .btn:last-child,
+#errand-order-page .btn:last-child,
+#take-order-page .btn:last-child,
+#take-errand-page .btn:last-child {
+    margin-bottom: 40px;
+}
+
+/* 聊天页面底部区域调整 */
+#chat-home-page .order-list:last-child {
+    padding-bottom: 40px;
+}
+
+/* 我的订单页面底部调整 */
+#my-orders-page .order-list,
+#completed-orders-page .order-list {
+    padding-bottom: 40px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .container {
+        padding-bottom: 100px !important; /* 移动端适当减少但保持足够间距 */
+    }
+    
+    .page:not(#settings-page) .order-actions:last-child,
+    .page:not(#settings-page) .card:last-child,
+    .page:not(#settings-page) .btn:last-child {
+        margin-bottom: 30px;
+    }
+}
+
+/* 确保底部导航栏始终在最上层 */
+.tab-bar {
+    z-index: 1000;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+/* 为有底部按钮的页面添加安全区域 */
+.page:not(#settings-page) {
+    position: relative;
+    padding-bottom: 20px; /* 添加额外的底部内边距 */
+}
+/* ========== 底部导航栏遮挡修复结束 ========== */
 
     </style>
 </head>
@@ -2178,26 +2262,39 @@ select {
 
     <script>
         
-        // ========== 新增：安卓设备检测和修复 ==========
-// 检测安卓设备并添加修复类
-function detectAndroid() {
+        // ========== 安卓设备检测和修复增强版 ==========
+function detectAndroidAndFix() {
     const userAgent = navigator.userAgent.toLowerCase();
     const isAndroid = userAgent.indexOf("android") > -1;
     
     if (isAndroid) {
-        document.body.classList.add('android-fix');
-        document.querySelector('.container').classList.add('android-fix');
+        console.log('检测到安卓设备，应用滑动修复');
+        
+        // 为body、container和所有page添加android类
+        document.body.classList.add('android');
+        document.querySelector('.container').classList.add('android');
         document.querySelectorAll('.page').forEach(page => {
-            page.classList.add('android-fix');
+            page.classList.add('android');
         });
         
-        console.log('安卓设备检测到，已应用滑动修复');
+        // 强制重绘以触发修复
+        setTimeout(() => {
+            document.body.style.overflow = 'hidden';
+            document.body.style.overflowY = 'auto';
+        }, 100);
+        
+        // 为所有可滚动容器添加touch事件处理
+        document.querySelectorAll('.order-list, .chat-messages').forEach(container => {
+            container.addEventListener('touchstart', function() {
+                this.style.overflowY = 'auto';
+            });
+        });
     }
 }
 
-// 页面加载完成后执行安卓检测
+// 在DOMContentLoaded时调用
 document.addEventListener('DOMContentLoaded', function() {
-    detectAndroid();
+    detectAndroidAndFix();
 });
 // ========== 安卓设备检测和修复结束 ==========
         
