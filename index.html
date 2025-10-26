@@ -977,6 +977,8 @@ input[type="datetime-local"].form-input {
             color: #ffc107;
         }
 
+
+
         /* 订单详情模态框样式 */
         .order-detail-modal {
             position: fixed;
@@ -1001,6 +1003,88 @@ input[type="datetime-local"].form-input {
     padding: 0; /* 修改这一行 */
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
+
+/* ========== 新增：成功提示模态框样式 ========== */
+.success-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.success-modal-content {
+    background: white;
+    width: 80%;
+    max-width: 300px;
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease-out;
+}
+
+.success-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #07c160, #05a050);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    color: white;
+    font-size: 24px;
+}
+
+.success-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.success-message {
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.success-confirm-btn {
+    background: linear-gradient(135deg, #4da6ff, #3399ff);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+}
+
+.success-confirm-btn:active {
+    transform: scale(0.98);
+    background: linear-gradient(135deg, #3399ff, #2980ff);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+/* ========== 新增结束 ========== */
 
 .order-detail-header {
     display: flex;
@@ -2883,8 +2967,8 @@ async function saveDefaultInfo() {
     
     // 重置警告状态，让用户下次可以再次看到警告（如果需要）
     sessionStorage.removeItem('defaultContactWarningShown');
-    
-    // ========== 新增：保存成功后的视觉反馈 ==========
+
+        // ========== 新增：保存成功后的视觉反馈 ==========
     const saveBtn = document.querySelector('#settings-page .settings-edit-btn');
     const originalText = saveBtn.textContent;
     saveBtn.textContent = '✓ 已保存';
@@ -2894,6 +2978,10 @@ async function saveDefaultInfo() {
         saveBtn.textContent = originalText;
         saveBtn.style.background = '';
     }, 2000);
+    // ========== 新增结束 ==========
+    
+    // ========== 新增：显示成功提示弹窗 ==========
+    showSuccessModal('默认联系信息已修改', '您的默认联系信息已成功更新，将在下次发布订单时自动填充。');
     // ========== 新增结束 ==========
     
     // 不再需要弹窗提示，因为有视觉反馈了
@@ -5709,6 +5797,54 @@ if (currentFilters.status !== 'all') {
                 ratingModal.remove();
             }
         }
+
+        // ========== 新增：显示成功提示模态框函数 ==========
+function showSuccessModal(title, message) {
+    // 创建模态框
+    const modal = document.createElement('div');
+    modal.className = 'success-modal';
+    modal.innerHTML = `
+        <div class="success-modal-content">
+            <div class="success-icon">
+                <i class="fas fa-check"></i>
+            </div>
+            <div class="success-title">${title}</div>
+            <div class="success-message">${message}</div>
+            <button class="success-confirm-btn" onclick="closeSuccessModal()">确认</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 添加点击背景关闭功能
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeSuccessModal();
+        }
+    });
+    
+    // 添加ESC键关闭功能
+    const escHandler = function(e) {
+        if (e.key === 'Escape') {
+            closeSuccessModal();
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+    
+    // 存储事件处理器以便清理
+    modal._escHandler = escHandler;
+}
+
+// 新增：关闭成功提示模态框
+function closeSuccessModal() {
+    const modal = document.querySelector('.success-modal');
+    if (modal) {
+        // 移除ESC事件监听
+        document.removeEventListener('keydown', modal._escHandler);
+        modal.remove();
+    }
+}
+// ========== 新增结束 ==========
         
         async function submitRating(orderId, orderType) {
     const ratingModal = document.getElementById('rating-modal');
