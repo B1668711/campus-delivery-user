@@ -4622,7 +4622,7 @@ async function fetchUserById(userId) {
         }
 
         // 获取未读消息数量 - 修复版本
-async function getUnreadMessageCount(orderId, orderType) {
+        async function getUnreadMessageCount(orderId, orderType) {
     try {
         // 从本地存储获取最后阅读时间
         const lastReadKey = `last_read_${orderType}_${orderId}`;
