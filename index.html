@@ -4446,9 +4446,13 @@ function updateLastReadTime(orderId, orderType) {
                 <button onclick="closeChat()" style="background: none; border: none; font-size: 20px; cursor: pointer;">×</button>
             </div>
             <div id="chat-messages" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column;"></div>
-            <div style="padding: 15px; border-top: 1px solid #eee; display: flex;">
+            <div style="padding: 15px; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px;">
+                <input type="file" id="chat-image-input" accept="image/*" style="display: none;">
+                <button onclick="document.getElementById('chat-image-input').click()" style="padding: 10px 15px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-image"></i>
+                </button>
                 <input type="text" id="chat-input" placeholder="输入消息..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                <button onclick="sendMessage()" style="margin-left: 10px; padding: 10px 20px; background: #4da6ff; color: white; border: none; border-radius: 5px; cursor: pointer;">发送</button>
+                <button onclick="sendMessage()" style="padding: 10px 20px; background: #4da6ff; color: white; border: none; border-radius: 5px; cursor: pointer;">发送</button>
             </div>
         </div>
     `;
@@ -4467,6 +4471,16 @@ function updateLastReadTime(orderId, orderType) {
         if (e.key === 'Enter') {
             sendMessage();
         }
+    });
+    
+    // 图片选择监听
+    document.getElementById('chat-image-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            sendImageMessage(file);
+        }
+        // 清空input，允许选择同一文件
+        e.target.value = '';
     });
 }
 
@@ -4517,9 +4531,21 @@ function closeChat() {
                             'background: #f0f0f0; color: #333; align-self: flex-start;'}
                     `;
                     
+                    // 判断是否为图片消息
+                    const isImage = msg.message_text && msg.message_text.startsWith('data:image/');
+                    let contentHTML = '';
+                    
+                    if (isImage) {
+                        // 渲染图片
+                        contentHTML = `<img src="${msg.message_text}" style="max-width: 250px; max-height: 300px; border-radius: 5px; display: block; margin-top: 5px; cursor: pointer;" onclick="this.style.maxWidth=this.style.maxWidth==='90vw'?'250px':'90vw'; this.style.maxHeight=this.style.maxHeight==='auto'?'300px':'auto';">`;
+                    } else {
+                        // 渲染文本
+                        contentHTML = `<div>${msg.message_text}</div>`;
+                    }
+                    
                     messageDiv.innerHTML = `
                         <div style="font-size: 12px; opacity: 0.8;">${msg.sender_name}</div>
-                        <div>${msg.message_text}</div>
+                        ${contentHTML}
                         <div style="font-size: 10px; opacity: 0.6; text-align: right;">${new Date(msg.created_at).toLocaleTimeString()}</div>
                     `;
                     
@@ -4559,6 +4585,53 @@ function closeChat() {
             } catch (error) {
                 console.error('发送消息失败:', error);
                 alert('发送消息失败，请重试！');
+            }
+        }
+
+        async function sendImageMessage(file) {
+            if (!currentChatOrder) return;
+            
+            // 检查文件大小 (限制为5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('图片大小不能超过5MB！');
+                return;
+            }
+            
+            // 检查文件类型
+            if (!file.type.startsWith('image/')) {
+                alert('请选择图片文件！');
+                return;
+            }
+            
+            try {
+                // 将图片转换为base64
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const fullDataURL = e.target.result;
+                    
+                    try {
+                        const { error } = await supabase
+                            .from('chat_messages')
+                            .insert([{
+                                order_id: currentChatOrder.id,
+                                order_type: currentChatOrder.type,
+                                sender_id: currentUser.id,
+                                sender_name: currentUser.name,
+                                message_text: fullDataURL
+                            }]);
+                        
+                        if (error) throw error;
+                        
+                        await loadChatMessages();
+                    } catch (error) {
+                        console.error('发送图片失败:', error);
+                        alert('发送图片失败，请重试！');
+                    }
+                };
+                reader.readAsDataURL(file);
+            } catch (error) {
+                console.error('处理图片失败:', error);
+                alert('处理图片失败，请重试！');
             }
         }
 
