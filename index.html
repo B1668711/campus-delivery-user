@@ -3687,6 +3687,11 @@ if (order.status === 'taken' && order.taken_by === currentUser.id) {
             if ((order.status === 'taken' || order.status === 'pending') && order.created_by === currentUser.id) {
                 orderHTML += `<button class="action-btn btn-cancel" onclick="cancelOrder('${order.id}', 'delivery')">取消订单</button>`;
             }
+
+            // 添加删除订单按钮（仅发布人，且订单已取消）
+            if (order.status === 'cancelled' && order.created_by === currentUser.id) {
+                orderHTML += `<button class="action-btn btn-cancel" onclick="deleteOrder('${order.id}', 'delivery')">删除订单</button>`;
+            }
             
             // 添加查看详情按钮
             orderHTML += `<button class="action-btn btn-secondary" onclick="viewOrderDetails('${order.id}', 'delivery')">查看详情</button>`;
@@ -3839,6 +3844,8 @@ async function renderErrandOrders() {
                     
                     ${(order.status === 'taken' || order.status === 'pending') && order.created_by === currentUser.id ? 
                         `<button class="action-btn btn-cancel" onclick="cancelOrder('${order.id}', 'errand')">取消订单</button>` : ''}
+                    ${order.status === 'cancelled' && order.created_by === currentUser.id ? 
+                        `<button class=\"action-btn btn-cancel\" onclick=\"deleteOrder('${order.id}', 'errand')\">删除订单</button>` : ''}
                     
                     <button class="action-btn btn-secondary" onclick="viewOrderDetails('${order.id}', 'errand')">查看详情</button>
                 </div>
@@ -4314,6 +4321,38 @@ async function fetchUserById(userId) {
             } catch (error) {
                 alert('取消订单失败，请重试！');
                 console.error(error);
+            }
+        }
+
+        // 删除订单（仅发布人，且订单状态为已取消）
+        async function deleteOrder(orderId, orderType) {
+            if (!confirm('确认删除该订单吗？删除后不可恢复。')) return;
+            try {
+                if (orderType === 'delivery') {
+                    const { error } = await supabase
+                        .from('delivery_orders')
+                        .delete()
+                        .eq('id', orderId);
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabase
+                        .from('errand_orders')
+                        .delete()
+                        .eq('id', orderId);
+                    if (error) throw error;
+                }
+
+                alert('订单已删除');
+                if (orderType === 'delivery') {
+                    await renderDeliveryOrders();
+                } else {
+                    await renderErrandOrders();
+                }
+                await refreshAllPages();
+
+            } catch (error) {
+                console.error('删除订单失败:', error);
+                alert('删除失败，请稍后重试');
             }
         }
 
