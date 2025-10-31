@@ -6803,8 +6803,61 @@ function closeSuccessModal() {
             }
         }
 
+        // 设置默认时间为当前时间1小时后
+        function setDefaultTimeValues() {
+            // 获取当前时间并添加1小时
+            const now = new Date();
+            now.setHours(now.getHours() + 1);
+            
+            // 格式化为datetime-local所需的格式 (YYYY-MM-DDTHH:MM)
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            const formattedTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+            
+            // 设置代取快递订单的期望送达时间
+            const deliveryTimeInput = document.getElementById('delivery-time');
+            if (deliveryTimeInput) {
+                deliveryTimeInput.value = formattedTime;
+            }
+            
+            // 设置跑腿任务的期望完成时间
+            const errandDeadlineInput = document.getElementById('errand-deadline');
+            if (errandDeadlineInput) {
+                errandDeadlineInput.value = formattedTime;
+            }
+        }
+        
+        // 当页面切换到订单发布页面时设置默认时间
+        function showPage(pageId) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page').forEach(page => {
+                page.style.display = 'none';
+                page.classList.remove('active');
+            });
+            
+            // 显示指定页面
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.style.display = 'block';
+                targetPage.classList.add('active');
+                
+                // 如果切换到订单发布页面，设置默认时间
+                if (pageId === 'order-page' || pageId === 'errand-order-page') {
+                    setDefaultTimeValues();
+                }
+            }
+        }
+        
         // 页面加载完成后初始化
-        document.addEventListener('DOMContentLoaded', initApp);
+        document.addEventListener('DOMContentLoaded', function() {
+            initApp();
+            // 页面加载时也设置一次默认时间，以防初始页面就是订单页面
+            setDefaultTimeValues();
+        });
         // 帮助与客服功能
 function showHelp(title, content) {
     alert(title + '\n\n' + content);
