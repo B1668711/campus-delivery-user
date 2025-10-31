@@ -4448,9 +4448,15 @@ function updateLastReadTime(orderId, orderType) {
             <div id="chat-messages" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column;"></div>
             <div style="padding: 15px; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px;">
                 <input type="file" id="chat-image-input" accept="image/*" style="display: none;">
-                <button onclick="document.getElementById('chat-image-input').click()" style="padding: 10px 15px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-image"></i>
-                </button>
+                <input type="file" id="chat-camera-input" accept="image/*" capture="environment" style="display: none;">
+                <div style="display: flex; gap: 4px;">
+                    <button onclick="document.getElementById('chat-image-input').click()" style="padding: 10px 12px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="从相册选择">
+                        <i class="fas fa-image"></i>
+                    </button>
+                    <button onclick="document.getElementById('chat-camera-input').click()" style="padding: 10px 12px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="拍照">
+                        <i class="fas fa-camera"></i>
+                    </button>
+                </div>
                 <input type="text" id="chat-input" placeholder="输入消息..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
                 <button onclick="sendMessage()" style="padding: 10px 20px; background: #4da6ff; color: white; border: none; border-radius: 5px; cursor: pointer;">发送</button>
             </div>
@@ -4478,6 +4484,16 @@ function updateLastReadTime(orderId, orderType) {
         const file = e.target.files[0];
         if (file) {
             sendImageMessage(file);
+        }
+        // 清空input，允许选择同一文件
+        e.target.value = '';
+    });
+    
+    // 拍照选择监听
+    document.getElementById('chat-camera-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            sendImageMessageWithWatermark(file);
         }
         // 清空input，允许选择同一文件
         e.target.value = '';
@@ -4627,6 +4643,118 @@ function closeChat() {
                         console.error('发送图片失败:', error);
                         alert('发送图片失败，请重试！');
                     }
+                };
+                reader.readAsDataURL(file);
+            } catch (error) {
+                console.error('处理图片失败:', error);
+                alert('处理图片失败，请重试！');
+            }
+        }
+
+        async function sendImageMessageWithWatermark(file) {
+            if (!currentChatOrder) return;
+            
+            // 检查文件大小 (限制为5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('图片大小不能超过5MB！');
+                return;
+            }
+            
+            // 检查文件类型
+            if (!file.type.startsWith('image/')) {
+                alert('请选择图片文件！');
+                return;
+            }
+            
+            try {
+                // 将图片转换为base64并添加水印
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // 创建canvas
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // 设置canvas尺寸
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        
+                        // 绘制原图
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // 添加水印文字
+                        const now = new Date();
+                        const dateStr = now.toLocaleDateString('zh-CN', { 
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit' 
+                        });
+                        const timeStr = now.toLocaleTimeString('zh-CN', { 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            second: '2-digit' 
+                        });
+                        const watermark = `${dateStr} ${timeStr}`;
+                        
+                        // 设置文字样式
+                        const fontSize = Math.max(20, canvas.width / 20);
+                        ctx.font = `bold ${fontSize}px Arial`;
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+                        ctx.lineWidth = 3;
+                        ctx.textAlign = 'right';
+                        ctx.textBaseline = 'bottom';
+                        
+                        // 获取文字宽度
+                        const textMetrics = ctx.measureText(watermark);
+                        const textWidth = textMetrics.width;
+                        const textHeight = fontSize;
+                        
+                        // 添加背景矩形
+                        const padding = 10;
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                        ctx.fillRect(
+                            canvas.width - textWidth - padding * 2,
+                            canvas.height - textHeight - padding * 2,
+                            textWidth + padding * 2,
+                            textHeight + padding * 2
+                        );
+                        
+                        // 添加白色文字
+                        ctx.fillStyle = 'white';
+                        ctx.fillText(
+                            watermark,
+                            canvas.width - padding,
+                            canvas.height - padding
+                        );
+                        
+                        // 将canvas转换为base64
+                        const fullDataURL = canvas.toDataURL('image/jpeg', 0.9);
+                        
+                        // 发送带水印的图片
+                        (async () => {
+                            try {
+                                const { error } = await supabase
+                                    .from('chat_messages')
+                                    .insert([{
+                                        order_id: currentChatOrder.id,
+                                        order_type: currentChatOrder.type,
+                                        sender_id: currentUser.id,
+                                        sender_name: currentUser.name,
+                                        message_text: fullDataURL
+                                    }]);
+                                
+                                if (error) throw error;
+                                
+                                await loadChatMessages();
+                            } catch (error) {
+                                console.error('发送图片失败:', error);
+                                alert('发送图片失败，请重试！');
+                            }
+                        })();
+                    };
+                    img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             } catch (error) {
