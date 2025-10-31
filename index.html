@@ -4462,6 +4462,14 @@ async function fetchUserById(userId) {
                 return;
             }
 
+            // 时间校验：不得早于当前时间
+            const now = new Date();
+            const dt = new Date(deliveryTime);
+            if (isNaN(dt.getTime()) || dt.getTime() < now.getTime()) {
+                alert('期望送达时间不能早于当前时间！');
+                return;
+            }
+
                 // ========== 新增：验证联系信息 ==========
     if (!validateContactInfo(contactType, contactInfo)) {
         return;
@@ -4554,6 +4562,14 @@ async function fetchUserById(userId) {
             if (!title || !description || !pickupLocation || !deliveryLocation || 
                 !deadline || !reward || !contactName || !contactInfo) {
                 alert('请填写所有必填字段！');
+                return;
+            }
+
+            // 时间校验：不得早于当前时间
+            const now2 = new Date();
+            const ddl = new Date(deadline);
+            if (isNaN(ddl.getTime()) || ddl.getTime() < now2.getTime()) {
+                alert('期望完成时间不能早于当前时间！');
                 return;
             }
 
@@ -5488,18 +5504,23 @@ async function initUserLocalOnly() {
 // 设置默认时间
 function setupDefaultTimes() {
     const now = new Date();
-    now.setHours(now.getHours() + 2);
+    // 默认时间：当前时间的1小时后
+    const defaultTime = new Date(now.getTime() + 60 * 60 * 1000);
     
     // 设置代取快递的默认期望送达时间
     const deliveryTimeInput = document.getElementById('delivery-time');
     if (deliveryTimeInput) {
-        deliveryTimeInput.value = now.toISOString().slice(0, 16);
+        // 不允许选择当前时间之前
+        deliveryTimeInput.min = new Date().toISOString().slice(0, 16);
+        deliveryTimeInput.value = defaultTime.toISOString().slice(0, 16);
     }
     
     // 设置跑腿任务的默认截止时间
     const errandDeadlineInput = document.getElementById('errand-deadline');
     if (errandDeadlineInput) {
-        errandDeadlineInput.value = now.toISOString().slice(0, 16);
+        // 不允许选择当前时间之前
+        errandDeadlineInput.min = new Date().toISOString().slice(0, 16);
+        errandDeadlineInput.value = defaultTime.toISOString().slice(0, 16);
     }
     
     console.log('默认时间设置完成');
