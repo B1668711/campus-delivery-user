@@ -4437,28 +4437,29 @@ function updateLastReadTime(orderId, orderType) {
         justify-content: center;
         align-items: center;
         z-index: 1000;
+        animation: fadeIn 0.3s ease;
     `;
     
     chatModal.innerHTML = `
-        <div style="background: white; width: 90%; max-width: 500px; height: 70%; border-radius: 10px; display: flex; flex-direction: column;">
-            <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0;">订单聊天</h3>
-                <button onclick="closeChat()" style="background: none; border: none; font-size: 20px; cursor: pointer;">×</button>
+        <div style="background: white; width: 90%; max-width: 500px; height: 70%; border-radius: 15px; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.2); overflow: hidden; animation: slideUp 0.3s ease;">
+            <div style="padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600;">订单聊天</h3>
+                <button onclick="closeChat()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: white; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='none'">×</button>
             </div>
-            <div id="chat-messages" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column;"></div>
-            <div style="padding: 15px; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px;">
+            <div id="chat-messages" style="flex: 1; padding: 15px 20px; overflow-y: auto; display: flex; flex-direction: column; background: #f5f5f5; scroll-behavior: smooth;"></div>
+            <div style="padding: 15px 20px; border-top: 1px solid #eee; display: flex; align-items: center; gap: 8px; background: white;">
                 <input type="file" id="chat-image-input" accept="image/*" style="display: none;">
                 <input type="file" id="chat-camera-input" accept="image/*" capture="environment" style="display: none;">
                 <div style="display: flex; gap: 4px;">
-                    <button onclick="document.getElementById('chat-image-input').click()" style="padding: 10px 12px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="从相册选择">
+                    <button onclick="document.getElementById('chat-image-input').click()" style="padding: 10px 12px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="从相册选择" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'" onmouseleave="this.style.transform='scale(1)'">
                         <i class="fas fa-image"></i>
                     </button>
-                    <button onclick="document.getElementById('chat-camera-input').click()" style="padding: 10px 12px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="拍照">
+                    <button onclick="document.getElementById('chat-camera-input').click()" style="padding: 10px 12px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" title="拍照" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'" onmouseleave="this.style.transform='scale(1)'">
                         <i class="fas fa-camera"></i>
                     </button>
                 </div>
-                <input type="text" id="chat-input" placeholder="输入消息..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                <button onclick="sendMessage()" style="padding: 10px 20px; background: #4da6ff; color: white; border: none; border-radius: 5px; cursor: pointer;">发送</button>
+                <input type="text" id="chat-input" placeholder="输入消息..." style="flex: 1; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 25px; outline: none; transition: all 0.3s ease; font-size: 14px;" onfocus="this.style.borderColor='#4da6ff'; this.style.boxShadow='0 0 0 3px rgba(77,166,255,0.1)'" onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                <button onclick="sendMessage()" style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'" onmouseleave="this.style.transform='scale(1)'">发送</button>
             </div>
         </div>
     `;
