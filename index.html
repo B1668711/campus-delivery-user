@@ -4775,9 +4775,9 @@ function updateLastReadTime(orderId, orderType) {
         }
 
         // 聊天功能
-                let isChatOpen = false; // 添加全局变量跟踪聊天状态
+        let isChatOpen = false; // 添加全局变量跟踪聊天状态
 
-                   async function openChat(orderId, orderType) {
+        async function openChat(orderId, orderType) {
     // 防止重复打开
     if (isChatOpen) {
         return;
@@ -6849,6 +6849,50 @@ function closeSuccessModal() {
                 if (pageId === 'order-page' || pageId === 'errand-order-page') {
                     setDefaultTimeValues();
                 }
+            }
+            
+            // 更新底部导航栏的active状态
+            updateTabBarActive(pageId);
+        }
+        
+        // 更新底部导航栏的active状态
+        function updateTabBarActive(pageId) {
+            // 移除所有tab-item的active类
+            document.querySelectorAll('.tab-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // 根据页面ID设置对应的tab-item为active
+            let tabItem;
+            switch(pageId) {
+                case 'main-page':
+                    tabItem = document.querySelector('.tab-item[onclick="showPage(\'main-page\')"]');
+                    break;
+                case 'delivery-home-page':
+                case 'order-page':
+                case 'take-order-page':
+                    tabItem = document.querySelector('.tab-item[onclick="enterDeliveryService()"]');
+                    break;
+                case 'errand-home-page':
+                case 'errand-order-page':
+                case 'take-errand-page':
+                    tabItem = document.querySelector('.tab-item[onclick="enterErrandService()"]');
+                    break;
+                case 'chat-home-page':
+                    tabItem = document.querySelector('.tab-item[onclick="showPage(\'chat-home-page\')"]');
+                    break;
+                case 'settings-page':
+                    tabItem = document.querySelector('.tab-item[onclick="showPage(\'settings-page\')"]');
+                    break;
+                case 'my-orders-page':
+                case 'completed-orders-page':
+                    // 我的订单和已完成订单页面不对应特定的tab
+                    break;
+            }
+            
+            // 添加active类到对应的tab-item
+            if (tabItem) {
+                tabItem.classList.add('active');
             }
         }
         
