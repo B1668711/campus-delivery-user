@@ -5455,7 +5455,7 @@ function showPage(pageId) {
                 
                 // 如果当前在聊天页面，刷新聊天列表
                 if (document.getElementById('chat-home-page').classList.contains('active')) {
-                    await renderChatHome();
+                    renderChatHome().catch(console.error);
                 }
                 
                 // 如果当前在接单页面，刷新可接订单列表
@@ -5575,6 +5575,11 @@ function showInitializationComplete() {
             element.style.color = '#07c160';
         }
     });
+    
+    // 立即渲染聊天页面，确保显示正确的空状态
+    if (document.getElementById('chat-home-page').classList.contains('active')) {
+        renderChatHome();
+    }
 }
 
         // 初始化应用 - 修改版本
@@ -5837,28 +5842,6 @@ function initSettingsPageValidation() {
 }
 // ==================== 设置页面验证初始化结束 ====================
 
-// ==================== 设置页面验证初始化 ====================
-function initSettingsPageValidation() {
-    const defaultContactInput = document.getElementById('default-contact-info');
-    if (defaultContactInput) {
-        // 输入时实时验证
-        defaultContactInput.addEventListener('input', updateDefaultContactValidity);
-        
-        // 初始加载时验证一次
-        updateDefaultContactValidity();
-    }
-    
-    // 为设置页面的联系方式类型按钮添加点击事件
-    const settingsContactBtns = document.querySelectorAll('#settings-page .contact-type-btn');
-    settingsContactBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            // 延迟一点时间，确保类型已经切换
-            setTimeout(updateDefaultContactValidity, 100);
-        });
-    });
-}
-// ==================== 设置页面验证初始化结束 ====================
-
         // 显示我的订单页面
         function showMyOrders() {
             document.getElementById('navbar-title').textContent = '我的订单';
@@ -5872,21 +5855,6 @@ function initSettingsPageValidation() {
             showPage('completed-orders-page');
             renderCompletedOrders('all');
         }
-
-        // 切换我的订单标签页
-        function switchOrderTab(tab) {
-    // 更新按钮状态
-    document.querySelectorAll('#my-orders-page .order-tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    event.target.classList.add('active');
-
-    // 更新类型筛选
-    currentFilters.type = tab;
-    
-    // 重新渲染订单列表
-    renderMyOrders();
-}
 
         // 切换已完成订单标签页
         function switchCompletedTab(tab) {
