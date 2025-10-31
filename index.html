@@ -2238,6 +2238,34 @@ select {
                     </div>
                 </div>
 
+                <div class="settings-section">
+                    <h3><i class="fab fa-weixin"></i> 微信绑定</h3>
+                    <div class="settings-item">
+                        <div class="settings-label">绑定状态</div>
+                        <div class="settings-value" id="wechat-bind-status">未绑定</div>
+                        <button class="settings-edit-btn" id="wechat-bind-btn" onclick="bindWeChatAccount()">绑定微信</button>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-label">微信账号</div>
+                        <div class="settings-value" id="wechat-account-display">-</div>
+                        <button class="settings-edit-btn" id="wechat-unbind-btn" style="display: none;" onclick="unbindWeChatAccount()">解除绑定</button>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3><i class="fab fa-alipay"></i> 支付宝绑定</h3>
+                    <div class="settings-item">
+                        <div class="settings-label">绑定状态</div>
+                        <div class="settings-value" id="alipay-bind-status">未绑定</div>
+                        <button class="settings-edit-btn" id="alipay-bind-btn" onclick="bindAlipayAccount()">绑定支付宝</button>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-label">支付宝账号</div>
+                        <div class="settings-value" id="alipay-account-display">-</div>
+                        <button class="settings-edit-btn" id="alipay-unbind-btn" style="display: none;" onclick="unbindAlipayAccount()">解除绑定</button>
+                    </div>
+                </div>
+
                 <!-- 新增的帮助与客服部分 -->
                 <div class="settings-section">
                     <h3><i class="fas fa-question-circle"></i> 帮助与客服</h3>
@@ -2879,6 +2907,11 @@ async function saveUserToDatabase(user) {
             default_contact_type: user.defaultContactType,
             default_contact_info: user.defaultContactInfo,
             default_address: user.defaultAddress,
+            // 新增：微信绑定信息（若表无该字段，后端会返回错误，前端忽略即可）
+            wechat_bound: user.wechatBound === true,
+            wechat_account: user.wechatAccount || null,
+            alipay_bound: user.alipayBound === true,
+            alipay_account: user.alipayAccount || null,
             updated_at: new Date().toISOString()
         };
         
@@ -2935,6 +2968,163 @@ function updateUserDisplay() {
             btn.classList.add('active');
         }
     });
+
+    // 更新微信绑定显示
+    updateWeChatBindDisplay();
+    // 更新支付宝绑定显示
+    updateAlipayBindDisplay();
+}
+
+// 微信绑定显示刷新
+function updateWeChatBindDisplay() {
+    const statusEl = document.getElementById('wechat-bind-status');
+    const accountEl = document.getElementById('wechat-account-display');
+    const bindBtn = document.getElementById('wechat-bind-btn');
+    const unbindBtn = document.getElementById('wechat-unbind-btn');
+    if (!statusEl || !accountEl || !bindBtn || !unbindBtn) return;
+
+    const isBound = !!(currentUser && currentUser.wechatBound);
+    const account = currentUser && currentUser.wechatAccount ? currentUser.wechatAccount : '';
+
+    statusEl.textContent = isBound ? '已绑定' : '未绑定';
+    accountEl.textContent = isBound ? account : '-';
+    bindBtn.style.display = isBound ? 'none' : '';
+    unbindBtn.style.display = isBound ? '' : 'none';
+}
+
+// 绑定微信账号（手动输入微信号；如需自动授权，后续可接入微信OAuth）
+async function bindWeChatAccount() {
+    try {
+        const input = prompt('请输入要绑定的微信账号（至少6位，字母或数字）：');
+        if (input === null) return; // 用户取消
+        const wechat = String(input).trim();
+
+        // 复用页面内的校验规则
+        const wechatRegex = /^[a-zA-Z0-9]{6,}$/;
+        if (!wechatRegex.test(wechat)) {
+            alert('微信账号格式不正确！\n\n请填写6位及以上的字母或数字组合。');
+            return;
+        }
+
+        if (!currentUser) {
+            alert('用户未初始化，请稍后重试');
+            return;
+        }
+
+        currentUser.wechatBound = true;
+        currentUser.wechatAccount = wechat;
+        // 若默认联系方式类型为微信且未设置默认联系方式，则自动写入
+        if (currentUser.defaultContactType === 'wechat' && !currentUser.defaultContactInfo) {
+            currentUser.defaultContactInfo = wechat;
+        }
+
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        updateWeChatBindDisplay();
+
+        if (typeof saveUserToDatabase === 'function' && window.supabase) {
+            await saveUserToDatabase(currentUser);
+        }
+
+        alert('微信账号绑定成功');
+    } catch (e) {
+        console.error('绑定微信账号失败:', e);
+        alert('绑定失败，请稍后重试');
+    }
+}
+
+// 解除绑定
+async function unbindWeChatAccount() {
+    try {
+        if (!currentUser || !currentUser.wechatBound) {
+            alert('当前未绑定微信');
+            return;
+        }
+        if (!confirm('确认解除绑定当前微信账号吗？')) return;
+
+        currentUser.wechatBound = false;
+        currentUser.wechatAccount = '';
+
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        updateWeChatBindDisplay();
+
+        if (typeof saveUserToDatabase === 'function' && window.supabase) {
+            await saveUserToDatabase(currentUser);
+        }
+
+        alert('已解除微信绑定');
+    } catch (e) {
+        console.error('解除微信绑定失败:', e);
+        alert('操作失败，请稍后重试');
+    }
+}
+
+// 支付宝绑定显示刷新
+function updateAlipayBindDisplay() {
+    const statusEl = document.getElementById('alipay-bind-status');
+    const accountEl = document.getElementById('alipay-account-display');
+    const bindBtn = document.getElementById('alipay-bind-btn');
+    const unbindBtn = document.getElementById('alipay-unbind-btn');
+    if (!statusEl || !accountEl || !bindBtn || !unbindBtn) return;
+
+    const isBound = !!(currentUser && currentUser.alipayBound);
+    const account = currentUser && currentUser.alipayAccount ? currentUser.alipayAccount : '';
+
+    statusEl.textContent = isBound ? '已绑定' : '未绑定';
+    accountEl.textContent = isBound ? account : '-';
+    bindBtn.style.display = isBound ? 'none' : '';
+    unbindBtn.style.display = isBound ? '' : 'none';
+}
+
+// 绑定支付宝账号（手动输入）
+async function bindAlipayAccount() {
+    try {
+        const input = prompt('请输入要绑定的支付宝账号（手机号/邮箱/支付宝UID）：');
+        if (input === null) return;
+        const alipay = String(input).trim();
+        if (!alipay) { alert('请输入有效的支付宝账号'); return; }
+        if (!currentUser) { alert('用户未初始化，请稍后重试'); return; }
+
+        currentUser.alipayBound = true;
+        currentUser.alipayAccount = alipay;
+
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        updateAlipayBindDisplay();
+
+        if (typeof saveUserToDatabase === 'function' && window.supabase) {
+            await saveUserToDatabase(currentUser);
+        }
+
+        alert('支付宝账号绑定成功');
+    } catch (e) {
+        console.error('绑定支付宝账号失败:', e);
+        alert('绑定失败，请稍后重试');
+    }
+}
+
+// 解除支付宝绑定
+async function unbindAlipayAccount() {
+    try {
+        if (!currentUser || !currentUser.alipayBound) {
+            alert('当前未绑定支付宝');
+            return;
+        }
+        if (!confirm('确认解除绑定当前支付宝账号吗？')) return;
+
+        currentUser.alipayBound = false;
+        currentUser.alipayAccount = '';
+
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        updateAlipayBindDisplay();
+
+        if (typeof saveUserToDatabase === 'function' && window.supabase) {
+            await saveUserToDatabase(currentUser);
+        }
+
+        alert('已解除支付宝绑定');
+    } catch (e) {
+        console.error('解除支付宝绑定失败:', e);
+        alert('操作失败，请稍后重试');
+    }
 }
 
         // 保存默认信息 - 更新版本
@@ -3460,6 +3650,11 @@ async function renderDeliveryOrders() {
                 </button>`;
             }
 
+            // 发布人可在已接单/配送中/已送达阶段发起支付
+            if ((order.status === 'taken' || order.status === 'processing' || order.status === 'delivered') && order.created_by === currentUser.id) {
+                orderHTML += `<button class="action-btn btn-primary" onclick="openPaymentModal('${order.id}', 'delivery', ${order.reward})">去支付</button>`;
+            }
+
             // 添加开始配送按钮（只有接单人且状态为taken）
 if (order.status === 'taken' && order.taken_by === currentUser.id) {
     orderHTML += `<button class="action-btn btn-processing" onclick="startDelivery('${order.id}', 'delivery')">开始配送</button>`;
@@ -3624,6 +3819,8 @@ async function renderErrandOrders() {
                         `<button class="action-btn btn-chat" onclick="openChat('${order.id}', 'errand')" style="position: relative;">
                             联系对方${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}
                          </button>` : ''}
+                    ${(order.status === 'taken' || order.status === 'processing' || order.status === 'delivered') && order.created_by === currentUser.id ?
+                        `<button class="action-btn btn-primary" onclick="openPaymentModal('${order.id}', 'errand', ${order.reward})">去支付</button>` : ''}
                     
                     ${order.status === 'taken' && order.taken_by === currentUser.id ? 
                         `<button class="action-btn btn-processing" onclick="startDelivery('${order.id}', 'errand')">开始任务</button>` : ''}
@@ -3862,6 +4059,124 @@ async function startDelivery(orderId, orderType) {
     } catch (error) {
         console.error('开始配送失败:', error);
         alert('操作失败，请重试！');
+    }
+}
+
+// 打开支付弹窗
+async function openPaymentModal(orderId, orderType, rewardAmount) {
+    try {
+        // 获取订单信息与接单人ID
+        let order = null;
+        if (orderType === 'delivery') {
+            const list = await getDeliveryOrders();
+            order = list.find(o => o.id === orderId);
+        } else {
+            const list = await getErrandOrders();
+            order = list.find(o => o.id === orderId);
+        }
+        if (!order || !order.taken_by) {
+            alert('暂无接单人，无法发起支付');
+            return;
+        }
+
+        const taker = await fetchUserById(order.taken_by);
+        const takerWeChat = taker && taker.wechat_account ? taker.wechat_account : '';
+        const takerAlipay = taker && taker.alipay_account ? taker.alipay_account : '';
+        const amount = Number(rewardAmount || order.reward || 0) || 0;
+
+        // 创建简单弹窗
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.left = '0';
+        overlay.style.top = '0';
+        overlay.style.right = '0';
+        overlay.style.bottom = '0';
+        overlay.style.background = 'rgba(0,0,0,0.5)';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.zIndex = '9999';
+
+        const modal = document.createElement('div');
+        modal.style.background = '#fff';
+        modal.style.borderRadius = '12px';
+        modal.style.width = '92%';
+        modal.style.maxWidth = '420px';
+        modal.style.padding = '18px';
+        modal.style.boxShadow = '0 8px 30px rgba(0,0,0,0.15)';
+
+        modal.innerHTML = `
+            <div style="font-size: 18px; font-weight: 600; margin-bottom: 10px;">支付给接单人</div>
+            <div style="margin-bottom: 8px; color: #666;">订单ID：${order.id.slice(-8)}</div>
+            <div style="margin-bottom: 12px; font-size: 16px;">金额：<strong style="color:#ff6b6b">${amount}</strong> 元</div>
+            <div style="display:flex; flex-direction: column; gap: 10px;">
+                <button class="action-btn btn-primary" id="btn-alipay-pay" ${takerAlipay ? '' : 'disabled style="opacity:.5; cursor:not-allowed;"'}>唤起支付宝并转账</button>
+                <button class="action-btn btn-secondary" id="btn-wechat-pay" ${takerWeChat ? '' : 'disabled style="opacity:.5; cursor:not-allowed;"'}>唤起微信并转账</button>
+                <div style="font-size: 12px; color:#999;">若唤起失败，请复制对方账号与金额，进入App完成转账。</div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="action-btn" id="btn-copy-amount">复制金额</button>
+                    ${takerAlipay ? `<button class="action-btn" id="btn-copy-alipay">复制支付宝账号</button>` : ''}
+                    ${takerWeChat ? `<button class="action-btn" id="btn-copy-wechat">复制微信账号</button>` : ''}
+                </div>
+                <button class="action-btn btn-cancel" id="btn-close-pay">关闭</button>
+            </div>
+        `;
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        const close = () => document.body.removeChild(overlay);
+        modal.querySelector('#btn-close-pay').addEventListener('click', close);
+        modal.addEventListener('click', (e) => { e.stopPropagation(); });
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+        // 复制
+        const safeCopy = async (text) => {
+            try { await navigator.clipboard.writeText(String(text)); alert('已复制到剪贴板'); } catch(_) { alert('复制失败，请手动选择复制'); }
+        };
+        modal.querySelector('#btn-copy-amount').addEventListener('click', () => safeCopy(amount));
+        if (takerAlipay) modal.querySelector('#btn-copy-alipay').addEventListener('click', () => safeCopy(takerAlipay));
+        if (takerWeChat) modal.querySelector('#btn-copy-wechat').addEventListener('click', () => safeCopy(takerWeChat));
+
+        // 尝试唤起支付宝（toAccount 转账）
+        if (takerAlipay) {
+            modal.querySelector('#btn-alipay-pay').addEventListener('click', () => {
+                const memo = encodeURIComponent(`订单${order.id.slice(-8)}`);
+                const url = `alipays://platformapi/startapp?appId=20000123&actionType=toAccount&account=${encodeURIComponent(takerAlipay)}&amount=${encodeURIComponent(String(amount))}&memo=${memo}`;
+                window.location.href = url;
+                setTimeout(() => alert('如果没有自动跳转，请手动打开支付宝完成转账'), 1200);
+            });
+        }
+
+        // 尝试唤起微信（受环境限制，无法预填收款方；提供唤起和复制信息）
+        if (takerWeChat) {
+            modal.querySelector('#btn-wechat-pay').addEventListener('click', () => {
+                // 常见scheme：weixin:// 及 weixin://dl/scan （打开微信/扫一扫）
+                try { window.location.href = 'weixin://'; } catch(_) {}
+                setTimeout(() => alert('若未能自动打开微信，请手动进入微信，搜索对方微信号进行转账'), 1200);
+            });
+        }
+
+    } catch (e) {
+        console.error('打开支付弹窗失败:', e);
+        alert('暂时无法发起支付，请稍后重试');
+    }
+}
+
+// 获取用户信息（从 users 表）
+async function fetchUserById(userId) {
+    if (!window.supabase) return null;
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .limit(1);
+        if (error) { console.warn('查询用户失败:', error); return null; }
+        return data && data.length ? data[0] : null;
+    } catch (e) {
+        console.warn('查询用户异常:', e);
+        return null;
     }
 }
 
