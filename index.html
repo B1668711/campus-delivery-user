@@ -524,6 +524,15 @@ input[type="datetime-local"].form-input {
             background-color: #e0a800;
         }
 
+        .btn-delete {
+            background-color: #ff4757; /* 红色背景 */
+            color: white;
+        }
+        
+        .btn-delete:active {
+            background-color: #d63031; /* 点击时颜色变深 */
+        }
+
         /* 新增开始配送/开始任务按钮样式 */
         .btn-processing {
             background-color: #28a745;
@@ -1904,54 +1913,59 @@ select {
             </div>
         </div>
         
-        <!-- 领取代取任务页面 -->
-        <div id="take-order-page" class="page">
-            <div class="card">
-                <button class="btn btn-secondary" onclick="showPage('delivery-home-page')" style="margin-bottom: 15px;">
-                    <i class="fas fa-arrow-left"></i> 返回代取服务
+<!-- 领取“代取”任务页面 - 【优化后】-->
+<div id="take-order-page" class="page">
+    <div class="card">
+        <button class="btn btn-secondary" onclick="showPage('delivery-home-page')" style="margin-bottom: 15px;">
+            <i class="fas fa-arrow-left"></i> 返回代取服务
+        </button>
+        
+        <!-- 1. 修改标题和说明 -->
+        <h2>您的接单信息</h2>
+        <p>接单前请填写您的联系信息，方便发布人联系您。</p>
+        
+        <div class="form-group">
+            <label for="taker-name" class="form-label">您的姓名</label>
+            <input type="text" id="taker-name" class="form-input" placeholder="请输入您的姓名" required>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">联系方式类型</label>
+            <div class="contact-type-selector">
+                <button type="button" class="contact-type-btn active" data-type="wechat">
+                    <i class="fab fa-weixin"></i> 微信
                 </button>
-                
-                <h2>领取代取任务</h2>
-                <p>请先授权您的联系方式，以便与下单人联系</p>
-                
-                <div class="form-group">
-                    <label for="taker-name" class="form-label">您的姓名</label>
-                    <input type="text" id="taker-name" class="form-input" placeholder="请输入您的姓名" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">联系方式类型</label>
-                    <div class="contact-type-selector">
-                        <button type="button" class="contact-type-btn active" data-type="wechat">
-                            <i class="fab fa-weixin"></i> 微信
-                        </button>
-                        <button type="button" class="contact-type-btn" data-type="phone">
-                            <i class="fas fa-phone"></i> 手机号
-                        </button>
-                        <button type="button" class="contact-type-btn" data-type="qq">
-                            <i class="fab fa-qq"></i> QQ号
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="taker-contact-info" class="form-label">联系方式</label>
-                    <input type="text" id="taker-contact-info" class="form-input" placeholder="请输入您的联系方式" required>
-                </div>
-                
-                <button class="btn btn-primary" id="auth-contact">授权并查看任务</button>
-                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="showPage('delivery-home-page')">返回代取服务</button>
-            </div>
-            
-            <div id="available-orders" style="display: none;">
-                <h3 style="margin: 20px 0 10px;">可接取的订单</h3>
-                <div class="order-list" id="available-orders-list">
-                    <div class="loading">
-                        <i class="fas fa-spinner fa-spin"></i> 加载中...
-                    </div>
-                </div>
+                <button type="button" class="contact-type-btn" data-type="phone">
+                    <i class="fas fa-phone"></i> 手机号
+                </button>
+                <button type="button" class="contact-type-btn" data-type="qq">
+                    <i class="fab fa-qq"></i> QQ号
+                </button>
             </div>
         </div>
+        
+        <div class="form-group">
+            <label for="taker-contact-info" class="form-label">联系方式</label>
+            <input type="text" id="taker-contact-info" class="form-input" placeholder="请输入您的联系方式" required>
+        </div>
+        
+        <!-- 2. 删除 "授权并查看任务" 按钮 -->
+        <!-- <button class="btn btn-primary" id="auth-contact">授权并查看任务</button> -->
+        
+        <button class="btn btn-secondary" style="margin-top: 10px;" onclick="showPage('delivery-home-page')">返回代取服务</button>
+    </div>
+    
+    <!-- 3. 去掉 style="display: none;" 让订单列表默认显示 -->
+    <div id="available-orders">
+        <h3 style="margin: 20px 0 10px;">可接取的订单</h3>
+        <div class="order-list" id="available-orders-list">
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i> 加载中...
+            </div>
+        </div>
+    </div>
+</div>
+
         
         <!-- 发布跑腿任务页面 -->
         <div id="errand-order-page" class="page">
@@ -2027,54 +2041,59 @@ select {
             </div>
         </div>
         
-        <!-- 领取跑腿任务页面 -->
-        <div id="take-errand-page" class="page">
-            <div class="card">
-                <button class="btn btn-secondary" onclick="showPage('errand-home-page')" style="margin-bottom: 15px;">
-                    <i class="fas fa-arrow-left"></i> 返回跑腿服务
+<!-- 领取跑腿任务页面 - 【最终优化版】 -->
+<div id="take-errand-page" class="page">
+    <div class="card">
+        <button class="btn btn-secondary" onclick="showPage('errand-home-page')" style="margin-bottom: 15px;">
+            <i class="fas fa-arrow-left"></i> 返回跑腿服务
+        </button>
+        
+        <!-- 1. 修改了标题和说明 -->
+        <h2>您的接单信息</h2>
+        <p>接单前请填写您的联系信息，方便发布人联系您。</p>
+        
+        <div class="form-group">
+            <label for="errand-taker-name" class="form-label">您的姓名</label>
+            <input type="text" id="errand-taker-name" class="form-input" placeholder="请输入您的姓名" required>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">联系方式类型</label>
+            <div class="contact-type-selector">
+                <button type="button" class="contact-type-btn active" data-type="wechat">
+                    <i class="fab fa-weixin"></i> 微信
                 </button>
-                
-                <h2>领取跑腿任务</h2>
-                <p>请先授权您的联系方式，以便与发布人联系</p>
-                
-                <div class="form-group">
-                    <label for="errand-taker-name" class="form-label">您的姓名</label>
-                    <input type="text" id="errand-taker-name" class="form-input" placeholder="请输入您的姓名" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">联系方式类型</label>
-                    <div class="contact-type-selector">
-                        <button type="button" class="contact-type-btn active" data-type="wechat">
-                            <i class="fab fa-weixin"></i> 微信
-                        </button>
-                        <button type="button" class="contact-type-btn" data-type="phone">
-                            <i class="fas fa-phone"></i> 手机号
-                        </button>
-                        <button type="button" class="contact-type-btn" data-type="qq">
-                            <i class="fab fa-qq"></i> QQ号
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="errand-taker-contact-info" class="form-label">联系方式</label>
-                    <input type="text" id="errand-taker-contact-info" class="form-input" placeholder="请输入您的联系方式" required>
-                </div>
-                
-                <button class="btn btn-success" id="auth-errand-contact">授权并查看任务</button>
-                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="showPage('errand-home-page')">返回跑腿服务</button>
-            </div>
-            
-            <div id="available-errands" style="display: none;">
-                <h3 style="margin: 20px 0 10px;">可接取的跑腿任务</h3>
-                <div class="order-list" id="available-errands-list">
-                    <div class="loading">
-                        <i class="fas fa-spinner fa-spin"></i> 加载中...
-                    </div>
-                </div>
+                <button type="button" class="contact-type-btn" data-type="phone">
+                    <i class="fas fa-phone"></i> 手机号
+                </button>
+                <button type="button" class="contact-type-btn" data-type="qq">
+                    <i class="fab fa-qq"></i> QQ号
+                </button>
             </div>
         </div>
+        
+        <div class="form-group">
+            <label for="errand-taker-contact-info" class="form-label">联系方式</label>
+            <input type="text" id="errand-taker-contact-info" class="form-input" placeholder="请输入您的联系方式" required>
+        </div>
+        
+        <!-- 2. 删除了 "授权并查看任务" 按钮 -->
+        
+        <button class="btn btn-secondary" style="margin-top: 10px;" onclick="showPage('errand-home-page')">返回跑腿服务</button>
+    </div>
+    
+    <!-- 3. 删除了 style="display: none;"，让任务列表默认显示 -->
+    <div id="available-errands">
+        <h3 style="margin: 20px 0 10px;">可接取的跑腿任务</h3>
+        <div class="order-list" id="available-errands-list">
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i> 加载中...
+            </div>
+        </div>
+    </div>
+</div>
+
+
         
         <!-- 聊天主页面 -->
         <div id="chat-home-page" class="page">
@@ -3595,6 +3614,7 @@ function createDeliveryOrderItemHTML(order) {
 
     const orderIdClass = unreadCount > 0 ? 'order-id has-unread' : 'order-id';
 
+    // 【修改点】这里的onclick事件依然保留，让整个卡片可点，同时下方也添加了明确的按钮
     let orderHTML = `
         <div class="order-item ${unreadCount > 0 ? 'chat-order-unread' : ''}" onclick="viewOrderDetails('${order.id}', 'delivery')">
             <div class="order-header">
@@ -3633,6 +3653,18 @@ function createDeliveryOrderItemHTML(order) {
         orderHTML += `<button class="action-btn btn-cancel" onclick="cancelOrder('${order.id}', 'delivery')">取消订单</button>`;
     }
 
+    // ====================== 核心修改部分 ======================
+
+    // 【解决问题一】为已完成或已取消的订单添加“删除”按钮
+    if ((order.status === 'completed' || order.status === 'cancelled') && order.created_by === currentUser.id) {
+        orderHTML += `<button class="action-btn btn-delete" onclick="deleteOrder('${order.id}', 'delivery')">删除订单</button>`;
+    }
+
+    // 【解决问题二】统一添加“查看详情”按钮，使其在所有状态下都可见
+    orderHTML += `<button class="action-btn btn-secondary" onclick="viewOrderDetails('${order.id}', 'delivery')">查看详情</button>`;
+
+    // ========================================================
+
     orderHTML += `
             </div>
         </div>
@@ -3640,6 +3672,7 @@ function createDeliveryOrderItemHTML(order) {
 
     return orderHTML;
 }
+
 
 
         // 渲染跑腿任务
@@ -4112,74 +4145,123 @@ async function fetchUserById(userId) {
     }
 }
 
-        // 接取代取订单
-        async function takeOrder(orderId) {
-            if (!currentUser.name || !currentUser.contactInfo) {
-                alert('请先填写您的姓名和联系方式！');
-                return;
-            }
-            
-            try {
-                await updateOrder(orderId, {
-                    status: 'taken',
-                    taken_by: currentUser.id,
-                    taker_name: currentUser.name,
-                    taker_contact: currentUser.contactInfo,
-                    taker_contact_type: currentUser.defaultContactType
-                });
-                
-                alert('接单成功！请尽快联系下单人确认细节。');
-                renderAvailableOrders();
-                renderDeliveryOrders();
-                
-                // 发送通知给发布者
-                const order = (await getDeliveryOrders()).find(o => o.id === orderId);
-                if (order) {
-                    sendNotification('您的订单已被接单', `订单 ${orderId.slice(-8)} 已被 ${currentUser.name} 接单`);
-                }
-                
-                // 添加这行代码 - 自动刷新所有页面数据
-                await refreshAllPages();
-                
-            } catch (error) {
-                alert('接单失败，请重试！');
-                console.error(error);
-            }
+// 接取代取订单 - 【流程优化 & 并发修复后的最终版本】
+async function takeOrder(orderId) {
+    // 1. 从页面上的表单获取接单信息
+    const takerName = document.getElementById('taker-name').value.trim();
+    const takerContactInfo = document.getElementById('taker-contact-info').value.trim();
+    const contactType = getSelectedContactType('take-order-page');
+
+    // 2. 检查信息是否填写完整
+    if (!takerName || !takerContactInfo) {
+        alert('接单前，请先在上方的表单中填写您的姓名和联系方式！');
+        document.getElementById('taker-name').focus(); // 自动聚焦到姓名输入框，提示用户
+        return; // 终止函数
+    }
+
+    // 3. 验证联系信息格式
+    if (!validateContactInfo(contactType, takerContactInfo)) {
+        return; // 验证失败，终止函数
+    }
+
+    // 4. 保存（更新）用户的联系信息
+    // 这样做的好处是，用户每次接单都会用最新的信息
+    await saveUser({
+        name: takerName,
+        contactInfo: takerContactInfo,
+        defaultContactType: contactType,
+        isTaker: true
+    });
+
+    // 5. 调用之前已经写好的、修复了并发问题的数据库函数
+    try {
+        const { data, error } = await supabase.rpc('take_order_atomic', {
+            order_id_in: orderId,
+            taker_id_in: currentUser.id,
+            taker_name_in: takerName, // 使用刚刚从表单获取的名字
+            taker_contact_in: takerContactInfo, // 使用刚刚从表单获取的联系方式
+            taker_contact_type_in: contactType,
+            order_type_in: 'delivery'
+        });
+
+        if (error) throw error;
+
+        if (data === 'SUCCESS') {
+            alert('接单成功！请尽快联系下单人确认细节。');
+            await refreshAllPages();
+            showPage('my-orders-page'); // 接单成功后跳转到“我的订单”页更合适
+        } else if (data === 'ALREADY_TAKEN') {
+            alert('手慢了，订单已被别人抢走啦！');
+            renderAvailableOrders(); // 只刷新当前列表
+        } else {
+            alert('发生未知错误，请重试。');
+        }
+    } catch (error) {
+        alert('接单失败，请检查网络后重试！');
+        console.error('接单 RPC 调用失败:', error);
+    }
+}
+
+// 接取跑腿任务 - 【流程优化 & 并发修复后的最终版本】
+async function takeErrandOrder(orderId) {
+    // 1. 从页面上的表单获取接单信息
+    const takerName = document.getElementById('errand-taker-name').value.trim();
+    const takerContactInfo = document.getElementById('errand-taker-contact-info').value.trim();
+    const contactType = getSelectedContactType('take-errand-page');
+
+    // 2. 检查信息是否填写完整
+    if (!takerName || !takerContactInfo) {
+        alert('接单前，请先在上方的表单中填写您的姓名和联系方式！');
+        document.getElementById('errand-taker-name').focus(); // 自动聚焦，提示用户
+        return; // 终止函数
+    }
+
+    // 3. 验证联系信息格式
+    if (!validateContactInfo(contactType, takerContactInfo)) {
+        return; // 验证失败，终止函数
+    }
+
+    // 4. 保存（更新）用户的联系信息
+    await saveUser({
+        name: takerName,
+        contactInfo: takerContactInfo,
+        defaultContactType: contactType,
+        isTaker: true
+    });
+
+    // 5. 调用数据库函数尝试接单
+    try {
+        const { data, error } = await supabase.rpc('take_order_atomic', {
+            order_id_in: orderId,
+            taker_id_in: currentUser.id,
+            taker_name_in: takerName, // 使用刚刚从表单获取的名字
+            taker_contact_in: takerContactInfo, // 使用刚刚从表单获取的联系方式
+            taker_contact_type_in: contactType,
+            order_type_in: 'errand' // 指定订单类型为 'errand'
+        });
+
+        if (error) {
+            throw error;
         }
 
-        // 接取跑腿任务
-        async function takeErrandOrder(orderId) {
-            if (!currentUser.name || !currentUser.contactInfo) {
-                alert('请先填写您的姓名和联系方式！');
-                return;
-            }
-            
-            try {
-                await updateErrandOrder(orderId, {
-                    status: 'taken',
-                    taken_by: currentUser.id,
-                    taker_name: currentUser.name,
-                    taker_contact: currentUser.contactInfo,
-                    taker_contact_type: currentUser.defaultContactType
-                });
-                
-                alert('接单成功！请尽快联系发布人确认细节。');
-                renderAvailableErrands();
-                renderErrandOrders();
-
-                // 发送通知给发布者
-                const order = (await getErrandOrders()).find(o => o.id === orderId);
-                if (order) {
-                    sendNotification('您的任务已被接单', `任务 ${orderId.slice(-8)} 已被 ${currentUser.name} 接单`);
-                }
-
-                await refreshAllPages();
-
-            } catch (error) {
-                alert('接单失败，请重试！');
-                console.error(error);
-            }
+        if (data === 'SUCCESS') {
+            alert('接单成功！请尽快联系发布人确认细节。');
+            await refreshAllPages();
+            showPage('my-orders-page'); // 接单成功后跳转到“我的订单”页
+        } else if (data === 'ALREADY_TAKEN') {
+            alert('手慢了，任务已被别人抢走啦！');
+            renderAvailableErrands(); // 只刷新当前列表
+        } else {
+            alert('发生未知错误，请重试。');
         }
+
+    } catch (error) {
+        alert('接单失败，请检查网络后重试！');
+        console.error('接单 RPC 调用失败:', error);
+    }
+}
+
+
 
         // 取消接单
         async function cancelTakeOrder(orderId, orderType) {
@@ -4249,35 +4331,39 @@ async function fetchUserById(userId) {
             }
         }
 
-        // 删除订单（仅发布人，且订单状态为已取消）
+
+
+        // 删除订单（仅限已完成或已取消的订单）
         async function deleteOrder(orderId, orderType) {
-            if (!confirm('确认删除该订单吗？删除后不可恢复。')) return;
+            // 弹出确认框，防止用户误删
+            if (!confirm('确认要永久删除该订单吗？此操作不可恢复！')) {
+                return; // 如果用户点击“取消”，则不执行任何操作
+            }
+
             try {
+                // 根据订单类型（'delivery' 或 'errand'），从对应的数据库表中删除记录
                 if (orderType === 'delivery') {
                     const { error } = await supabase
-                        .from('delivery_orders')
+                        .from('delivery_orders') // 从代取快递订单表中删除
                         .delete()
-                        .eq('id', orderId);
-                    if (error) throw error;
+                        .eq('id', orderId); // 匹配订单ID
+                    if (error) throw error; // 如果出错，抛出异常
                 } else {
                     const { error } = await supabase
-                        .from('errand_orders')
+                        .from('errand_orders') // 从跑腿任务订单表中删除
                         .delete()
-                        .eq('id', orderId);
-                    if (error) throw error;
+                        .eq('id', orderId); // 匹配订单ID
+                    if (error) throw error; // 如果出错，抛出异常
                 }
 
-                alert('订单已删除');
-                if (orderType === 'delivery') {
-                    await renderDeliveryOrders();
-                } else {
-                    await renderErrandOrders();
-                }
+                alert('订单已成功删除！'); // 提示用户删除成功
+
+                // 刷新所有页面的数据，让删除结果立刻显示出来
                 await refreshAllPages();
 
             } catch (error) {
                 console.error('删除订单失败:', error);
-                alert('删除失败，请稍后重试');
+                alert('删除失败，请稍后重试。');
             }
         }
 
@@ -5126,11 +5212,19 @@ function showPage(pageId) {
         // 已完成订单页面没有对应的底部导航项，保持当前激活状态
     }
     
-    // 自动填充联系信息
-    if (pageId === 'order-page' || pageId === 'take-order-page' || 
-        pageId === 'errand-order-page' || pageId === 'take-errand-page') {
-        autoFillContactInfo();
-    }
+// 自动填充联系信息
+if (pageId === 'order-page' || pageId === 'take-order-page' || 
+    pageId === 'errand-order-page' || pageId === 'take-errand-page') {
+    autoFillContactInfo();
+}
+
+// 【新增这部分逻辑】
+if (pageId === 'take-order-page') {
+    renderAvailableOrders();
+}
+if (pageId === 'take-errand-page') {
+    renderAvailableErrands();
+}
     
     // 每次切换页面都更新未读徽章
     updateTabUnreadBadge();
@@ -5146,62 +5240,6 @@ function showPage(pageId) {
             
             // 发布跑腿任务
             document.getElementById('submit-errand-order').addEventListener('click', submitErrandOrder);
-            
-            // 授权代取联系方式
-            document.getElementById('auth-contact').addEventListener('click', function() {
-                const takerName = document.getElementById('taker-name').value;
-                const takerContactInfo = document.getElementById('taker-contact-info').value;
-                const contactType = getSelectedContactType('take-order-page');
-                
-                if (!takerName || !takerContactInfo) {
-                    alert('请填写您的姓名和联系方式！');
-                    return;
-                }
-
-                    // ========== 新增：验证联系信息 ==========
-    if (!validateContactInfo(contactType, takerContactInfo)) {
-        return;
-    }
-    // ========== 新增结束 ==========
-                
-                saveUser({
-                    name: takerName,
-                    contactInfo: takerContactInfo,
-                    defaultContactType: contactType,
-                    isTaker: true
-                });
-                
-                document.getElementById('available-orders').style.display = 'block';
-                renderAvailableOrders();
-            });
-            
-            // 授权跑腿联系方式
-            document.getElementById('auth-errand-contact').addEventListener('click', function() {
-                const takerName = document.getElementById('errand-taker-name').value;
-                const takerContactInfo = document.getElementById('errand-taker-contact-info').value;
-                const contactType = getSelectedContactType('take-errand-page');
-                
-                if (!takerName || !takerContactInfo) {
-                    alert('请填写您的姓名和联系方式！');
-                    return;
-                }
-
-                    // ========== 新增：验证联系信息 ==========
-    if (!validateContactInfo(contactType, takerContactInfo)) {
-        return;
-    }
-    // ========== 新增结束 ==========
-                
-                saveUser({
-                    name: takerName,
-                    contactInfo: takerContactInfo,
-                    defaultContactType: contactType,
-                    isTaker: true
-                });
-                
-                document.getElementById('available-errands').style.display = 'block';
-                renderAvailableErrands();
-            });
             
             // 物品类型变化监听
             const itemTypeSelect = document.getElementById('item-type');
@@ -5725,9 +5763,49 @@ function updateDefaultContactValidity() {
     }
 }
 // ==================== 设置页面视觉提示功能结束 ====================
-    
+
+// 启动 Supabase 实时订阅
+function startRealtimeSubscriptions() {
+    console.log('🚀 启动实时数据订阅...');
+
+    const channel = supabase.channel('public-orders');
+
+    channel
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'delivery_orders' },
+            (payload) => {
+                console.log('代取快递订单表发生变化:', payload);
+                // 收到变化后，智能刷新数据
+                // 防抖处理，避免短时间内多次刷新
+                debouncedRefresh();
+            }
+        )
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'errand_orders' },
+            (payload) => {
+                console.log('跑腿任务表发生变化:', payload);
+                debouncedRefresh();
+            }
+        )
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                console.log('✅ 成功订阅订单变化！');
+            }
+        });
+}
+
+// 创建一个防抖的刷新函数，防止过于频繁地刷新
+const debouncedRefresh = debounce(async () => {
+    console.log('正在执行防抖刷新...');
+    await refreshAllPages();
+    // 还可以主动给用户一个微小的提示
+    // 例如：showToast('列表已更新');
+}, 1000); // 1秒内发生的多次变化，只会触发一次刷新
     // 显示初始化完成状态
     showInitializationComplete();
+
+    // 在 initApp 的最后调用
+startRealtimeSubscriptions();
 }
 
 // ==================== 设置页面视觉提示功能 ====================
@@ -5862,176 +5940,139 @@ function switchOrderTab(tab) {
 
 
         // 渲染我的订单
-async function renderMyOrders() {
-    const ordersList = document.getElementById('my-orders-list');
+        async function renderMyOrders() {
+            const ordersList = document.getElementById('my-orders-list');
 
-    try {
-        // 使用带缓存的函数获取订单数据
-        const [deliveryOrders, errandOrders] = await Promise.all([
-            getCachedDeliveryOrders(),
-            getCachedErrandOrders()
-        ]);
+            try {
+                // 使用带缓存的函数获取订单数据
+                const [deliveryOrders, errandOrders] = await Promise.all([
+                    getCachedDeliveryOrders(),
+                    getCachedErrandOrders()
+                ]);
 
-        ordersList.innerHTML = '';
+                ordersList.innerHTML = '';
 
-        // 筛选当前用户的订单
-        const myDeliveryOrders = deliveryOrders.filter(order => 
-            order.created_by === currentUser.id || order.taken_by === currentUser.id
-        );
+                // 筛选当前用户的订单
+                const myDeliveryOrders = deliveryOrders.filter(order => 
+                    order.created_by === currentUser.id || order.taken_by === currentUser.id
+                );
 
-        const myErrandOrders = errandOrders.filter(order => 
-            order.created_by === currentUser.id || order.taken_by === currentUser.id
-        );
+                const myErrandOrders = errandOrders.filter(order => 
+                    order.created_by === currentUser.id || order.taken_by === currentUser.id
+                );
 
-        let ordersToShow = [];
+                let ordersToShow = [];
 
-        // 根据当前筛选条件筛选订单
-        if (currentFilters.type === 'all') {
-            ordersToShow = [...myDeliveryOrders, ...myErrandOrders];
-        } else if (currentFilters.type === 'delivery') {
-            ordersToShow = myDeliveryOrders;
-        } else if (currentFilters.type === 'errand') {
-            ordersToShow = myErrandOrders;
-        }
+                // 根据当前筛选条件筛选订单
+                if (currentFilters.type === 'all') {
+                    ordersToShow = [...myDeliveryOrders, ...myErrandOrders];
+                } else if (currentFilters.type === 'delivery') {
+                    ordersToShow = myDeliveryOrders;
+                } else if (currentFilters.type === 'errand') {
+                    ordersToShow = myErrandOrders;
+                }
 
-        // 应用状态筛选 - 更新后的版本
-if (currentFilters.status !== 'all') {
-    ordersToShow = ordersToShow.filter(order => {
-        switch (currentFilters.status) {
-            case 'completed':
-                return order.status === 'completed';
-            case 'pending':
-                return order.status === 'pending'; // 待接单：发布后未被接单
-            case 'taken':
-                return order.status === 'taken'; // 待完成：已接单但未开始配送/任务
-            case 'processing':
-                return order.status === 'processing' || order.status === 'delivered'; // 配送中：已开始但未完成
-            default:
-                return true;
-        }
-    });
-}
+                if (currentFilters.status !== 'all') {
+                    ordersToShow = ordersToShow.filter(order => {
+                        if (currentFilters.status === 'completed') {
+                            return order.status === 'completed' || order.status === 'cancelled';
+                        }
+                        if (currentFilters.status === 'pending') {
+                            return order.status === 'pending';
+                        }
+                        if (currentFilters.status === 'taken' || currentFilters.status === 'processing') {
+                            return order.status === 'taken' || order.status === 'processing' || order.status === 'delivered';
+                        }
+                        return true;
+                    });
+                }
 
-        // 按创建时间排序
-        ordersToShow.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                // 按创建时间排序
+                ordersToShow.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-        if (ordersToShow.length === 0) {
-            ordersList.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-inbox"></i>
-                    <p>暂无订单记录</p>
-                </div>
-            `;
-            return;
-        }
-
-        for (const order of ordersToShow) {
-            const unreadCount = await getUnreadMessageCount(order.id, order.title ? 'errand' : 'delivery');
-            const orderItem = document.createElement('div');
-            orderItem.className = 'order-item';
-            if (order.title) {
-                orderItem.classList.add('errand-item');
-            }
-            if (unreadCount > 0) {
-                orderItem.classList.add('chat-order-unread');
-            }
-            
-            let statusClass = '';
-            let statusText = '';
-            
-            switch(order.status) {
-                case 'pending':
-                    statusClass = 'status-pending';
-                    statusText = '待接单';
-                    break;
-                case 'taken':
-                    statusClass = 'status-taken';
-                    statusText = '已接单';
-                    break;
-                case 'processing':
-                    statusClass = 'status-processing';
-                    statusText = '配送中';
-                    break;
-                case 'delivered':
-                    statusClass = 'status-delivered';
-                    statusText = '已送达';
-                    break;
-                case 'completed':
-                    statusClass = 'status-completed';
-                    statusText = '已完成';
-                    break;
-                case 'cancelled':
-                    statusClass = 'status-cancelled';
-                    statusText = '已取消';
-                    break;
-            }
-            
-            // 判断订单类型
-            const isDelivery = !order.title;
-            const orderType = isDelivery ? '代取快递' : '跑腿任务';
-            const orderTitle = isDelivery ? '代取快递' : order.title;
-            // 添加订单类型标签
-            const orderTypeClass = isDelivery ? 'order-type-delivery' : 'order-type-errand';
-            const orderTypeBadge = `<span class="order-type-badge ${orderTypeClass}">${orderType}</span>`;
-            
-            // 判断用户角色
-            const isMyOrder = order.created_by === currentUser.id;
-            const userRole = isMyOrder ? '我发布的' : '我接取的';
-            
-            orderItem.innerHTML = `
-                <div class="order-header">
-                    <div class="order-id">
-                        ${order.id.slice(-8)}
-                        ${orderTypeBadge}
-                        <span class="order-type-tag">${userRole}</span>
-                        ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}
-                    </div>
-                    <div class="order-status ${statusClass}">${statusText}</div>
-                </div>
-                <div class="order-details">
-                    <div class="order-detail"><strong>${isDelivery ? '任务' : '标题'}:</strong> ${orderTitle}</div>
-                    ${isDelivery ? `
-                        <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
-                        <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
-                    ` : `
-                        <div class="order-detail"><strong>描述:</strong> ${order.description}</div>
-                        <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
-                        <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
-                    `}
-                    <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
-                    <div class="order-detail"><strong>创建时间:</strong> ${new Date(order.created_at).toLocaleString()}</div>
-                    ${unreadCount > 0 ? `
-                        <div class="order-detail" style="color: #ff4757; font-weight: 500;">
-                            <i class="fas fa-comment-dots"></i> ${unreadCount}条未读消息
+                if (ordersToShow.length === 0) {
+                    ordersList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>暂无符合条件的订单记录</p>
                         </div>
-                    ` : ''}
-                </div>
-                <div class="order-actions">
-                    ${(order.status === 'taken' || order.status === 'processing' || order.status === 'delivered') && (order.created_by === currentUser.id || order.taken_by === currentUser.id) ? 
-                        `<button class="action-btn btn-chat" onclick="openChat('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')" style="position: relative;">
-                            联系对方${unreadCount > 0 ? `<span class="chat-btn-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}
-                        </button>` : ''}
-                    ${order.status === 'processing' && order.taken_by === currentUser.id ? 
-                        `<button class="action-btn btn-delivered" onclick="markAsDelivered('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">已送达</button>` : ''}
-                    ${order.status === 'delivered' && order.created_by === currentUser.id ? 
-                        `<button class="action-btn btn-confirm" onclick="confirmCompletion('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">确认完成</button>` : ''}
-                    ${order.status === 'completed' ? 
-                        `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">评价</button>` : ''}
-                </div>
-            `;
-            
-            ordersList.appendChild(orderItem);
+                    `;
+                    return;
+                }
+
+                for (const order of ordersToShow) {
+                    const unreadCount = await getUnreadMessageCount(order.id, order.title ? 'errand' : 'delivery');
+                    const orderItem = document.createElement('div');
+                    orderItem.className = 'order-item';
+                    if (order.title) {
+                        orderItem.classList.add('errand-item');
+                    }
+                    if (unreadCount > 0) {
+                        orderItem.classList.add('chat-order-unread');
+                    }
+                    
+                    let statusClass = '';
+                    let statusText = '';
+                    
+                    switch(order.status) {
+                        case 'pending': statusClass = 'status-pending'; statusText = '待接单'; break;
+                        case 'taken': statusClass = 'status-taken'; statusText = '已接单'; break;
+                        case 'processing': statusClass = 'status-processing'; statusText = '配送中'; break;
+                        case 'delivered': statusClass = 'status-delivered'; statusText = '已送达'; break;
+                        case 'completed': statusClass = 'status-completed'; statusText = '已完成'; break;
+                        case 'cancelled': statusClass = 'status-cancelled'; statusText = '已取消'; break;
+                    }
+                    
+                    const isDelivery = !order.title;
+                    const orderType = isDelivery ? 'delivery' : 'errand';
+                    const orderTypeName = isDelivery ? '代取快递' : '跑腿任务';
+                    const orderTitle = isDelivery ? '代取快递' : order.title;
+                    const orderTypeClass = isDelivery ? 'order-type-delivery' : 'order-type-errand';
+                    const orderTypeBadge = `<span class="order-type-badge ${orderTypeClass}">${orderTypeName}</span>`;
+                    
+                    const isMyOrder = order.created_by === currentUser.id;
+                    const userRole = isMyOrder ? '我发布的' : '我接取的';
+                    
+                    orderItem.innerHTML = `
+                        <div class="order-header">
+                            <div class="order-id">
+                                ${order.id.slice(-8)}
+                                ${orderTypeBadge}
+                                <span class="order-type-tag">${userRole}</span>
+                                ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}
+                            </div>
+                            <div class="order-status ${statusClass}">${statusText}</div>
+                        </div>
+                        <div class="order-details">
+                            <div class="order-detail"><strong>${isDelivery ? '任务' : '标题'}:</strong> ${orderTitle}</div>
+                            <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
+                        </div>
+                        <div class="order-actions">
+                            ${(order.status === 'taken' || order.status === 'processing' || order.status === 'delivered') ? 
+                                `<button class="action-btn btn-chat" onclick="openChat('${order.id}', '${orderType}')">联系对方</button>` : ''}
+                            
+                            <!-- ▼▼▼ 这里是新增的逻辑 ▼▼▼ -->
+                            ${(order.status === 'completed' || order.status === 'cancelled') ? 
+                                `<button class="action-btn btn-delete" onclick="deleteOrder('${order.id}', '${orderType}')">删除订单</button>` : ''}
+                            <!-- ▲▲▲ 新增逻辑结束 ▲▲▲ -->
+                            
+                            <button class="action-btn btn-secondary" onclick="viewOrderDetails('${order.id}', '${orderType}')">查看详情</button>
+                        </div>
+                    `;
+                    
+                    ordersList.appendChild(orderItem);
+                }
+
+            } catch (error) {
+                ordersList.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>加载订单失败: ${error.message}</p>
+                    </div>
+                `;
+            }
         }
 
-    } catch (error) {
-        ordersList.innerHTML = `
-            <div class="error-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>加载订单失败: ${error.message}</p>
-            </div>
-        `;
-    }
-}
 
         // 渲染已完成订单
         async function renderCompletedOrders(type = 'all') {
@@ -6082,7 +6123,6 @@ if (currentFilters.status !== 'all') {
                 }
         
                 for (const order of ordersToShow) {
-                    const unreadCount = await getUnreadMessageCount(order.id, order.title ? 'errand' : 'delivery');
                     const orderItem = document.createElement('div');
                     orderItem.className = 'order-item';
                     if (order.title) {
@@ -6102,7 +6142,8 @@ if (currentFilters.status !== 'all') {
             
                     // 判断订单类型
                     const isDelivery = !order.title;
-                    const orderType = isDelivery ? '代取快递' : '跑腿任务';
+                    const orderType = isDelivery ? 'delivery' : 'errand';
+                    const orderTypeName = isDelivery ? '代取快递' : '跑腿任务';
                     const orderTitle = isDelivery ? '代取快递' : order.title;
             
                     // 判断用户角色
@@ -6113,31 +6154,21 @@ if (currentFilters.status !== 'all') {
                         <div class="order-header">
                             <div class="order-id">
                                 ${order.id.slice(-8)}
-                                <span class="order-type-tag">${orderType}</span>
+                                <span class="order-type-tag">${orderTypeName}</span>
                                 <span class="order-type-tag">${userRole}</span>
                             </div>
                             <div class="order-status ${statusClass}">${statusText}</div>
                         </div>
                         <div class="order-details">
                             <div class="order-detail"><strong>${isDelivery ? '任务' : '标题'}:</strong> ${orderTitle}</div>
-                            ${isDelivery ? `
-                                <div class="order-detail"><strong>取件地址:</strong> ${order.pickup_address}</div>
-                                <div class="order-detail"><strong>送达地址:</strong> ${order.delivery_address}</div>
-                            ` : `
-                                <div class="order-detail"><strong>描述:</strong> ${order.description}</div>
-                                <div class="order-detail"><strong>取物地点:</strong> ${order.pickup_location}</div>
-                                <div class="order-detail"><strong>送达地点:</strong> ${order.delivery_location}</div>
-                            `}
                             <div class="order-detail"><strong>酬劳:</strong> ${order.reward}元</div>
                             <div class="order-detail"><strong>${order.status === 'completed' ? '完成时间' : '取消时间'}:</strong> ${new Date(order.updated_at || order.created_at).toLocaleString()}</div>
                         </div>
                         <div class="order-actions">
-                            ${order.status === 'completed' ? 
-                                (async () => {
-                                    const hasRated = await checkIfRated(order.id, isDelivery ? 'delivery' : 'errand');
-                                    return !hasRated ? `<button class="action-btn btn-rate" onclick="rateOrder('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">评价</button>` : '';
-                                })() : ''}
-                            <button class="action-btn btn-secondary" onclick="viewOrderDetails('${order.id}', '${isDelivery ? 'delivery' : 'errand'}')">查看详情</button>
+                             <!-- ▼▼▼ 这里是新增的代码 ▼▼▼ -->
+                            <button class="action-btn btn-delete" onclick="deleteOrder('${order.id}', '${orderType}')">删除订单</button>
+                             <!-- ▲▲▲ 新增代码结束 ▲▲▲ -->
+                            <button class="action-btn btn-secondary" onclick="viewOrderDetails('${order.id}', '${orderType}')">查看详情</button>
                         </div>
                     `;
             
@@ -6153,6 +6184,7 @@ if (currentFilters.status !== 'all') {
                 `;
             }
         }
+
 
         async function rateOrder(orderId, orderType) {
     // 先检查是否已经评价过
@@ -7201,6 +7233,7 @@ function applyFilters() {
     </script>
 </body>
 </html>
+
 
 
 
